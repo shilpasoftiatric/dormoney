@@ -30,3 +30,15 @@ export async function saveOnboardingStep(step: number, data: any) {
 
   return { success: true };
 }
+
+export async function updateProfile(updates: any) {
+  const user = await getAuthenticatedUser();
+  if (!user) return { error: "Unauthorized" };
+
+  await connectToDatabase();
+  await User.findByIdAndUpdate(user._id, {
+    ...updates,
+  });
+
+  return { success: true };
+}

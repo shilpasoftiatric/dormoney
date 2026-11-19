@@ -7,3 +7,13 @@ export async function validateDiscountCode(code: string) {
 export async function applyDiscountCodeWithReferrals(data: any) {
   return { success: true };
 }
+
+export async function claimDiscountPlan(data: {
+  code: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  email: string;
+}) {
+  return { success: true };
+}
