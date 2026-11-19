@@ -10,7 +10,10 @@ export const getAuthenticatedUser = cache(async (): Promise<IUser | null> => {
     await connectToDatabase();
     const user = await User.findById(payload.userId).lean<IUser>();
     return user || null;
-  } catch (err) {
+  } catch (err: any) {
+    if (err?.digest === "DYNAMIC_SERVER_USAGE" || err?.message?.includes("Dynamic server usage")) {
+      throw err;
+    }
     console.error("Error in getAuthenticatedUser:", err);
     return null;
   }

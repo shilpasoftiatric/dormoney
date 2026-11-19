@@ -5,6 +5,8 @@ import Topbar from "@/components/layout/Topbar";
 import { Suspense } from "react";
 import { AIStateProvider } from "@/context/AIStateContext";
 
+export const dynamic = "force-dynamic";
+
 function SidebarSkeleton() {
   return (
     <div className="w-64 border-r border-slate-200 bg-white flex flex-col h-full animate-pulse print:hidden shrink-0">
