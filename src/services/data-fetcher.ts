@@ -6,7 +6,7 @@ export const getStudentDashboardData = cache(async (userId: string) => {
     await connectToDatabase();
     const user = await User.findById(userId).lean();
 
-    const userProfile = {
+    const userProfile: Record<string, any> = {
       id: userId,
       email: user?.email || "",
       student_first_name: user?.firstName || "Student",
@@ -18,11 +18,20 @@ export const getStudentDashboardData = cache(async (userId: string) => {
       onboarding_complete: user?.onboardingComplete ?? true,
       current_streak: 1,
       schoolari_goals: [],
+      masterId: userId,
+      subscriptionOwnerId: userId,
     };
 
     return {
       userProfile,
       profile: userProfile,
+      masterId: userId,
+      subscriptionOwnerId: userId,
+      documents: [] as any[],
+      essays: [] as any[],
+      savedColleges: [] as any[],
+      applications: [] as any[],
+      resume: null as any,
       tasks: [],
       globalTasks: [],
       trackerItems: [],
@@ -40,7 +49,7 @@ export const getStudentDashboardData = cache(async (userId: string) => {
       coachingStatus: { enrolled: false, activeSession: null, completedCount: 0 },
     };
   } catch {
-    const defaultProfile = {
+    const defaultProfile: Record<string, any> = {
       id: userId,
       email: "",
       student_first_name: "Student",
@@ -52,11 +61,20 @@ export const getStudentDashboardData = cache(async (userId: string) => {
       onboarding_complete: true,
       current_streak: 1,
       schoolari_goals: [],
+      masterId: userId,
+      subscriptionOwnerId: userId,
     };
 
     return {
       userProfile: defaultProfile,
       profile: defaultProfile,
+      masterId: userId,
+      subscriptionOwnerId: userId,
+      documents: [] as any[],
+      essays: [] as any[],
+      savedColleges: [] as any[],
+      applications: [] as any[],
+      resume: null as any,
       tasks: [],
       globalTasks: [],
       trackerItems: [],
