@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { createAdminClient, getAuthenticatedUser } from "@/lib/supabase/server";
+import { getAuthenticatedUser } from "@/lib/auth/getUser";
 import { AdminSidebar } from "./AdminSidebar";
 import { AdminHeader } from "./AdminHeader";
 import { canAccessAdmin, type StaffRole } from "@/lib/rbac";
@@ -10,25 +10,17 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const user = await getAuthenticatedUser();
 
   if (!user) {
-    redirect("/login");
+    redirect("/admin/login");
   }
 
-  const adminSupabase = await createAdminClient();
-  // Verify Staff Role with adminSupabase (bypasses RLS)
-  const { data: profile } = await adminSupabase
-    .from("profiles")
-    .select("role, student_first_name, parent_first_name")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  const role = profile?.role;
+  const role = user.role;
 
   if (!canAccessAdmin(role)) {
     redirect("/dashboard");
   }
 
   const staffRole = role as StaffRole;
-  const userName = profile?.student_first_name || profile?.parent_first_name || user.email?.split("@")[0];
+  const userName = user.firstName || user.contactName || user.email?.split("@")[0] || "Admin";
 
   return (
     <div className="fixed inset-0 flex bg-slate-50 overflow-hidden">

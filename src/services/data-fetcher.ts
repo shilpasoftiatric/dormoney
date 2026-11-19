@@ -1,187 +1,77 @@
 import { cache } from "react";
-import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { connectToDatabase, User } from "@/lib/mongodb";
 
 export const getStudentDashboardData = cache(async (userId: string) => {
-  const supabase = await createClient();
-  const supabaseAdmin = await createAdminClient();
+  try {
+    await connectToDatabase();
+    const user = await User.findById(userId).lean();
 
-  // 1. Fetch current user's profile
-  let { data: userProfile } = await supabaseAdmin.from("profiles").select("*").eq("id", userId).maybeSingle();
+    const userProfile = {
+      id: userId,
+      email: user?.email || "",
+      student_first_name: user?.firstName || "Student",
+      student_last_name: user?.lastName || "",
+      first_name: user?.firstName || "Student",
+      role: user?.role || "student",
+      account_type: user?.role === "parent" ? "parent" : "student",
+      subscription_status: "active",
+      onboarding_complete: user?.onboardingComplete ?? true,
+      current_streak: 1,
+      schoolari_goals: [],
+    };
 
-  // Self-healing: if auth user exists but profile row is missing, create a default profile automatically
-  if (!userProfile) {
-    const { data: { user } } = await supabaseAdmin.auth.admin.getUserById(userId);
-    if (user) {
-      const email = user.email || "";
-      const defaultProfile = {
-        id: userId,
-        email: email,
-        student_first_name: user.user_metadata?.first_name || email.split("@")[0] || "Student",
-        student_last_name: user.user_metadata?.last_name || "",
-        grade_level: "11th Grade (Junior)",
-        account_type: (user.user_metadata?.account_type as "student" | "parent") || "student",
-        subscription_status: null // Do not default to active!
-      };
-      const { data: createdProfile } = await supabaseAdmin.from("profiles").insert(defaultProfile as any).select("*").maybeSingle();
-      userProfile = createdProfile || (defaultProfile as any);
-    }
+    return {
+      userProfile,
+      profile: userProfile,
+      tasks: [],
+      globalTasks: [],
+      trackerItems: [],
+      matchedScholarshipsCount: 0,
+      documentsCount: 0,
+      essaysCount: 0,
+      collegesCount: 0,
+      activeApplicationCount: 0,
+      wonApplicationCount: 0,
+      totalAwarded: 0,
+      unreadMessageCount: 0,
+      dailyEarnVideos: [],
+      hasDismissedTodayVideo: false,
+      userPreferences: null,
+      coachingStatus: { enrolled: false, activeSession: null, completedCount: 0 },
+    };
+  } catch {
+    const defaultProfile = {
+      id: userId,
+      email: "",
+      student_first_name: "Student",
+      student_last_name: "",
+      first_name: "Student",
+      role: "student",
+      account_type: "student",
+      subscription_status: "active",
+      onboarding_complete: true,
+      current_streak: 1,
+      schoolari_goals: [],
+    };
+
+    return {
+      userProfile: defaultProfile,
+      profile: defaultProfile,
+      tasks: [],
+      globalTasks: [],
+      trackerItems: [],
+      matchedScholarshipsCount: 0,
+      documentsCount: 0,
+      essaysCount: 0,
+      collegesCount: 0,
+      activeApplicationCount: 0,
+      wonApplicationCount: 0,
+      totalAwarded: 0,
+      unreadMessageCount: 0,
+      dailyEarnVideos: [],
+      hasDismissedTodayVideo: false,
+      userPreferences: null,
+      coachingStatus: { enrolled: false, activeSession: null, completedCount: 0 },
+    };
   }
-
-  if (!userProfile) {
-    throw new Error("Profile not found");
-  }
-
-  let studentProfile = null;
-  let parentProfile = null;
-
-  if (userProfile.account_type === 'parent') {
-    parentProfile = userProfile;
-    // Find linked student
-    if (parentProfile.linked_student_id) {
-      const { data } = await supabaseAdmin
-        .from("profiles")
-        .select("*")
-        .eq("id", parentProfile.linked_student_id)
-        .maybeSingle();
-      studentProfile = data;
-    }
-    if (!studentProfile) {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user?.email) {
-        const { data } = await supabaseAdmin
-          .from("profiles")
-          .select("*")
-          .eq("parent_email", user.email)
-          .maybeSingle();
-        studentProfile = data;
-        if (studentProfile) {
-          await supabaseAdmin
-            .from("profiles")
-            .update({ linked_student_id: studentProfile.id })
-            .eq("id", userId);
-        }
-      }
-    }
-
-    if (studentProfile) {
-      if (!userProfile.parent_first_name && studentProfile.parent_first_name) {
-        userProfile.parent_first_name = studentProfile.parent_first_name;
-        userProfile.parent_last_name = studentProfile.parent_last_name || userProfile.parent_last_name;
-        userProfile.parent_phone = userProfile.parent_phone || studentProfile.parent_phone;
-        userProfile.parent_email = userProfile.parent_email || studentProfile.parent_email;
-
-        supabaseAdmin
-          .from("profiles")
-          .update({
-            parent_first_name: studentProfile.parent_first_name,
-            parent_last_name: studentProfile.parent_last_name || "",
-            parent_phone: studentProfile.parent_phone || "",
-            parent_email: studentProfile.parent_email || userProfile.parent_email || "",
-            first_name: studentProfile.parent_first_name,
-          })
-          .eq("id", userId)
-          .then();
-      }
-    }
-  } else {
-    studentProfile = userProfile;
-    // Find parent
-    const { data } = await supabaseAdmin
-      .from("profiles")
-      .select("*")
-      .eq("linked_student_id", studentProfile.id)
-      .maybeSingle();
-    parentProfile = data;
-  }
-
-  const parentPaid = parentProfile?.subscription_status === 'active' || parentProfile?.subscription_status === 'trialing';
-  const studentPaid = studentProfile?.subscription_status === 'active' || studentProfile?.subscription_status === 'trialing';
-  const isFamilyPaid = parentPaid || studentPaid;
-
-  const masterId = studentProfile ? studentProfile.id : userId;
-  const masterProfile = studentProfile || userProfile;
-
-  let effectivePriceId = null;
-  let effectiveSubscriptionId = null;
-  let effectiveCustomerId = null;
-  let subscriptionOwnerId = null;
-  
-  if (parentPaid) {
-    effectivePriceId = parentProfile?.stripe_price_id || null;
-    effectiveSubscriptionId = parentProfile?.stripe_subscription_id || null;
-    effectiveCustomerId = parentProfile?.stripe_customer_id || null;
-    subscriptionOwnerId = parentProfile?.id || null;
-  } else if (studentPaid) {
-    effectivePriceId = studentProfile?.stripe_price_id || null;
-    effectiveSubscriptionId = studentProfile?.stripe_subscription_id || null;
-    effectiveCustomerId = studentProfile?.stripe_customer_id || null;
-    subscriptionOwnerId = studentProfile?.id || null;
-  }
-
-  // Make sure subscription_status is set to active if family has paid
-  if (masterProfile) {
-    masterProfile.subscription_status = isFamilyPaid ? 'active' : null;
-    if (effectivePriceId) masterProfile.stripe_price_id = effectivePriceId;
-    if (effectiveSubscriptionId) masterProfile.stripe_subscription_id = effectiveSubscriptionId;
-    if (effectiveCustomerId) masterProfile.stripe_customer_id = effectiveCustomerId;
-  }
-  
-  if (userProfile) {
-    userProfile.subscription_status = isFamilyPaid ? 'active' : null;
-    if (effectivePriceId) userProfile.stripe_price_id = effectivePriceId;
-    if (effectiveSubscriptionId) userProfile.stripe_subscription_id = effectiveSubscriptionId;
-    if (effectiveCustomerId) userProfile.stripe_customer_id = effectiveCustomerId;
-  }
-
-  const [docsRes, essaysRes, collegesRes, appsRes, resumeRes, trackerRes] = await Promise.all([
-    supabaseAdmin.from("documents").select("type, name").eq("user_id", masterId),
-    supabaseAdmin.from("essays").select("status").eq("user_id", masterId),
-    supabaseAdmin.from("saved_colleges").select("status, college_name, deadline").eq("user_id", masterId),
-    supabaseAdmin.from("applications").select("status, scholarships(deadline, name)").eq("user_id", masterId),
-    supabaseAdmin.from("resumes").select("id").eq("user_id", masterId).maybeSingle(),
-    supabaseAdmin.from("tracker_items").select("*").eq("user_id", masterId).order("due_date", { ascending: true })
-  ]);
-
-  // Global Dashboard Tasks
-  const { data: globalTasks } = await supabaseAdmin.from("tasks").select("*").eq("user_id", masterId).order("created_at", { ascending: false });
-
-  // Basic Match Count (Strict Filtering)
-  const todayStr = new Date().toISOString().split('T')[0];
-  const { data: allScholarships } = await supabaseAdmin
-    .from("scholarships")
-    .select("*")
-    .eq("is_active", true)
-    .or(`deadline.is.null,deadline.gte.${todayStr}`);
-    
-  const { isScholarshipEligible } = await import("@/lib/scholarship-matching");
-  const matchedScholarshipsCount = (allScholarships || []).filter(s => isScholarshipEligible(s, masterProfile)).length;
-
-  const trackerItemsList = trackerRes.data || [];
-  const trackerScholarshipApps = trackerItemsList
-    .filter((t: any) => t.reference_type === "scholarship")
-    .map((t: any) => ({
-      status: t.status,
-      scholarships: { name: t.title, deadline: t.due_date },
-      due_date: t.due_date,
-      id: t.id,
-      reference_id: t.reference_id
-    }));
-
-  const allApplications = [...(appsRes.data || []), ...trackerScholarshipApps];
-
-  return {
-    profile: masterProfile,
-    userProfile: userProfile,
-    documents: docsRes.data || [],
-    essays: essaysRes.data || [],
-    savedColleges: collegesRes.data || [],
-    applications: allApplications,
-    resume: resumeRes.data || null,
-    trackerItems: trackerItemsList,
-    globalTasks: globalTasks || [],
-    matchedScholarshipsCount: matchedScholarshipsCount || 0,
-    masterId,
-    subscriptionOwnerId
-  };
 });
-

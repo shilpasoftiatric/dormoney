@@ -106,26 +106,18 @@ export async function toggleContentActive(id: string, is_active: boolean) {
 }
 
 export async function getActiveContentBanners(): Promise<any[]> {
-  const adminClient = await createAdminClient();
-  const now = new Date().toISOString();
+  try {
+    const adminClient = await createAdminClient();
+    const { data, error } = await adminClient
+      .from("dashboard_content" as any)
+      .select("*")
+      .eq("is_active", true)
+      .in("type", ["banner", "announcement", "event", "tip", "quote", "featured_scholarship"])
+      .order("created_at", { ascending: false });
 
-  const { data, error } = await adminClient
-    .from("dashboard_content" as any)
-    .select("*")
-    .eq("is_active", true)
-    .in("type", ["banner", "announcement", "event", "tip", "quote", "featured_scholarship"])
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    console.error("[getActiveContentBanners] Error:", error);
+    if (error) return [];
+    return data || [];
+  } catch {
     return [];
   }
-
-  const valid = ((data as any[]) || []).filter((item: any) => {
-    if (item.scheduled_at && new Date(item.scheduled_at).getTime() > Date.now()) return false;
-    if (item.expires_at && new Date(item.expires_at).getTime() < Date.now()) return false;
-    return true;
-  });
-
-  return valid;
 }

@@ -50,40 +50,41 @@
 }
 
 :root {
-  /* Schoolari Brand — Purple primary */
-  --background: oklch(0.98 0.003 264);
+  /* Dormoney Brand — Primary Blue #1A6FD4 & Primary Green #4CAF39 */
+  --background: #ffffff;
   --foreground: oklch(0.145 0.02 264);
-  --card: oklch(1 0 0);
+  --card: #ffffff;
   --card-foreground: oklch(0.145 0.02 264);
-  --popover: oklch(1 0 0);
+  --popover: #ffffff;
   --popover-foreground: oklch(0.145 0.02 264);
-  --primary: oklch(0.56 0.22 293);
-  /* purple-600 */
-  --primary-foreground: oklch(1 0 0);
+  --primary: #1A6FD4;
+  --primary-foreground: #ffffff;
+  --accent-green: #4CAF39;
+  --accent-green-foreground: #ffffff;
   --secondary: oklch(0.97 0.005 264);
   --secondary-foreground: oklch(0.3 0.02 264);
   --muted: oklch(0.97 0.005 264);
   --muted-foreground: oklch(0.55 0.01 264);
-  --accent: oklch(0.94 0.03 293);
-  --accent-foreground: oklch(0.56 0.22 293);
+  --accent: #eff6ff;
+  --accent-foreground: #1A6FD4;
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0.005 264);
   --input: oklch(0.922 0.005 264);
-  --ring: oklch(0.56 0.22 293);
-  --chart-1: oklch(0.56 0.22 293);
-  --chart-2: oklch(0.65 0.18 160);
+  --ring: #1A6FD4;
+  --chart-1: #1A6FD4;
+  --chart-2: #4CAF39;
   --chart-3: oklch(0.7 0.17 55);
   --chart-4: oklch(0.6 0.2 230);
   --chart-5: oklch(0.55 0.22 340);
   --radius: 0.75rem;
-  --sidebar: oklch(1 0 0);
+  --sidebar: #ffffff;
   --sidebar-foreground: oklch(0.145 0.02 264);
-  --sidebar-primary: oklch(0.56 0.22 293);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.94 0.03 293);
-  --sidebar-accent-foreground: oklch(0.56 0.22 293);
+  --sidebar-primary: #1A6FD4;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #eff6ff;
+  --sidebar-accent-foreground: #1A6FD4;
   --sidebar-border: oklch(0.93 0.005 264);
-  --sidebar-ring: oklch(0.56 0.22 293);
+  --sidebar-ring: #1A6FD4;
 }
 
 .dark {

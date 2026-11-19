@@ -83,14 +83,14 @@ export function AdminSidebar({ role, userName, userEmail }: AdminSidebarProps) {
             title={isSidebarCollapsed ? "AdminPanel (Click to expand)" : undefined}
           >
             {/* Shield logo icon */}
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center shrink-0 shadow-lg shadow-blue-500/25">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#1A6FD4] to-[#4CAF39] flex items-center justify-center shrink-0 shadow-lg shadow-blue-500/25">
               <ShieldCheck className="w-5 h-5 text-white" />
             </div>
 
             {/* Brand name — hidden when collapsed */}
             {(!isSidebarCollapsed || isMobileOpen) && (
               <span className="text-[17px] font-extrabold text-white tracking-tight truncate">
-                Admin<span className="text-slate-400 font-semibold">Panel</span>
+                Dormoney<span className="text-[#1A6FD4] font-bold ml-1">Admin</span>
               </span>
             )}
           </Link>

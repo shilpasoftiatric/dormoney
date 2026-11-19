@@ -1,5 +1,5 @@
 // ============================================================
-//  Schoolari RBAC — Role-Based Access Control
+//  Dormoney RBAC — Role-Based Access Control
 //  Single source of truth for all role and permission logic
 // ============================================================
 

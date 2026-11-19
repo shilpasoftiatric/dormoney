@@ -1,812 +1,758 @@
 "use client";
 
-import { useEffect, useState, useTransition, useRef } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { saveOnboardingStep, getProfile } from "@/app/actions/profile";
-import { createClient } from "@/lib/supabase/client";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import {
+  GraduationCap,
+  Heart,
+  Building2,
+  Users,
+  ArrowRight,
+  ArrowLeft,
+  CheckCircle2,
+  Lock,
+  Mail,
+  User,
+  Phone,
+  Sparkles,
+  DollarSign,
+  Calendar,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input, PhoneInput } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CheckCircle2, Check, ArrowRight, X, ChevronDown, Trash2 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import Swal from "@/lib/swal";
-import { toast } from "sonner";
 
-const US_STATES = [
-  "Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado", "Connecticut", "Delaware", "Florida",
-  "Georgia", "Hawaii", "Idaho", "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana", "Maine",
-  "Maryland", "Massachusetts", "Michigan", "Minnesota", "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada",
-  "New Hampshire", "New Jersey", "New Mexico", "New York", "North Carolina", "North Dakota", "Ohio", "Oklahoma",
-  "Oregon", "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota", "Tennessee", "Texas", "Utah",
-  "Vermont", "Virginia", "Washington", "West Virginia", "Wisconsin", "Wyoming"
+type RoleType = "student" | "parent" | "donor" | "organization";
+
+const DONOR_GIVING_INTERESTS = [
+  "STEM",
+  "First-Gen",
+  "Arts",
+  "Athletics",
+  "Business",
+  "Pre-Med",
 ];
-
-const GRADE_LEVEL_OPTIONS = ["9th Grade", "10th Grade", "11th Grade", "12th Grade", "College Freshman", "College Sophomore", "College Junior", "College Senior", "Graduate Student"];
-const UNWEIGHTED_GPA_OPTIONS = ["Under 2.0", "2.0–2.5", "2.5–3.0", "3.0–3.5", "3.5–4.0", "4.1 and higher", "Not sure"];
-const WEIGHTED_GPA_OPTIONS = ["Under 2.0", "2.0–2.5", "2.5–3.0", "3.0–3.5", "3.5–4.0", "4.1 and higher", "Not applicable", "Not sure"];
-const EXPECTED_GRAD_YEARS = ["2026", "2027", "2028", "2029", "2030"];
-const APPLIED_OPTIONS = ["Yes", "No", "Currently applying"];
-const ENROLLED_OPTIONS = ["Yes", "No"];
-
-const INTENDED_MAJORS = ["Business Administration", "Computer Science", "Nursing", "Psychology", "Biology", "Criminal Justice", "Education", "Engineering", "Communications", "Accounting", "Marketing", "Finance", "Political Science", "Graphic Design", "Information Technology", "Health Sciences", "Social Work", "English", "Architecture", "Other", "Undecided"];
-const PREFERRED_COLLEGE_TYPES = ["Public", "Private", "HBCU", "Community College", "Trade School", "Military", "No Preference"];
-const EXTRACURRICULAR_OPTIONS = ["Athletics & Sports", "Academics & STEM", "Arts & Creative Expression", "Leadership", "Community Service", "School Organizations", "Career & Workforce Development", "Entrepreneurship", "Civic & Government Engagement", "Faith & Cultural Organizations", "Employment & Family Responsibilities", "Personal Projects & Special Interests", "Other"];
-const CAREER_INTERESTS_OPTIONS = ["Business & Entrepreneurship", "Computer Science & Technology", "Engineering", "Healthcare", "Education", "Law", "Government & Public Service", "Arts, Media & Design", "Finance & Accounting", "Science & Research", "Skilled Trades & Construction", "Agriculture & Environmental Science", "Hospitality & Tourism", "Marketing & Communications", "Sports & Recreation", "Military & Public Safety", "Transportation & Logistics", "Architecture & Urban Planning", "Social & Human Services", "Aviation & Aerospace", "Undecided", "Other"];
-const ETHNICITY_OPTIONS = ["American Indian or Alaska Native", "Asian", "Black or African American", "Hispanic or Latino", "Middle Eastern or North African", "Native Hawaiian or Other Pacific Islander", "White", "Multiracial / Two or More Races", "Other", "Prefer not to say"];
-const GENDER_OPTIONS = ["Male", "Female", "Non-binary", "Prefer not to say"];
-
-const STEPS = [
-  { id: 1, name: "Let's Get to Know You" },
-  { id: 2, name: "Your Academic Journey" },
-  { id: 3, name: "Your Story" },
-  { id: 4, name: "Success Vault" },
-];
-
-const toggleArrayValue = (arr: string[], value: string) =>
-  arr.includes(value) ? arr.filter((item) => item !== value) : [...arr, value];
-
-function MultiSelectDropdown({ options, selected, onChange, placeholder }: { options: string[], selected: string[], onChange: (val: string[]) => void, placeholder: string }) {
-  const [open, setOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  return (
-    <div className="relative" ref={containerRef}>
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        className="flex min-h-12 w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-violet-600 text-left text-slate-600"
-      >
-        <span className="truncate pr-2">
-          {selected.length > 0 ? selected.join(", ") : placeholder}
-        </span>
-        <ChevronDown className={cn("h-4 w-4 opacity-50 shrink-0 transition-transform duration-200", open && "rotate-180")} />
-      </button>
-
-      {open && (
-        <div className="absolute z-50 w-full mt-1 max-h-60 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg p-2">
-          {options.map(option => (
-            <label key={option} className="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-lg cursor-pointer text-sm text-slate-700">
-              <input
-                type="checkbox"
-                checked={selected.includes(option)}
-                onChange={(e) => {
-                  if (e.target.checked) {
-                    onChange([...selected, option]);
-                  } else {
-                    onChange(selected.filter(i => i !== option));
-                  }
-                }}
-                className="rounded border-slate-300 text-violet-600 focus:ring-violet-600 w-4 h-4"
-              />
-              {option}
-            </label>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const [isPending, startTransition] = useTransition();
-  const [step, setStep] = useState(1);
+
+  // Onboarding Step: 1 = Role, 2 = Account Creation, 3 = Campaign Creation, 4 = Confirmation
+  const [step, setStep] = useState<number>(1);
+  const [selectedRole, setSelectedRole] = useState<RoleType>("student");
+
+  // Account creation form state
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [phone, setPhone] = useState("");
+  const [smsOptIn, setSmsOptIn] = useState(false);
+  const [termsAgreed, setTermsAgreed] = useState(false);
+  const [organizationName, setOrganizationName] = useState("");
+  const [contactName, setContactName] = useState("");
+
+  // Campaign creation form state
+  const [campaignTitle, setCampaignTitle] = useState("");
+  const [campaignStory, setCampaignStory] = useState("");
+  const [goalAmount, setGoalAmount] = useState("");
+  const [donationFrequency, setDonationFrequency] = useState<"daily" | "weekly" | "monthly">("monthly");
+  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
+
+  // UI status
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [done, setDone] = useState(false);
-  const [loadingInitial, setLoadingInitial] = useState(true);
-  const [isParentAccount, setIsParentAccount] = useState(false);
 
-  // Custom text for "Other" selections
-  const [customExtracurricular, setCustomExtracurricular] = useState("");
-  const [customCareerInterest, setCustomCareerInterest] = useState("");
-
-  // Storage upload states
-  const [uploading, setUploading] = useState(false);
-  const [uploadedDocs, setUploadedDocs] = useState<{ id?: string; name: string; type: string; filePath?: string }[]>([]);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [uploadType, setUploadType] = useState<"transcript" | "report_card" | "recommendation_letter" | "essay" | "resume" | "certificate" | "award" | "other">("other");
-  const [customDocName, setCustomDocName] = useState("");
-
-  useEffect(() => {
-    if (searchParams.get("payment_success") === "true") {
-      window.history.replaceState(null, "", "/onboarding");
-    }
-  }, [searchParams]);
-
-  useEffect(() => {
-    if (error) {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-  }, [error]);
-
-  const [form, setForm] = useState({
-    account_type: "",
-    student_first_name: "",
-    student_last_name: "",
-    student_email: "",
-    student_phone: "",
-    parent_first_name: "",
-    parent_last_name: "",
-    parent_email: "",
-    parent_phone: "",
-    high_school_name: "",
-    state: "",
-    grade_level: "",
-
-    unweighted_gpa: "",
-    weighted_gpa: "",
-    expected_graduation_year: "",
-    applied_to_college: "",
-    enrolled_in_college: "",
-    intended_major: [] as string[],
-    preferred_college_type: [] as string[],
-    top_3_schools: ["", "", ""],
-
-    extracurricular_activities: [] as string[],
-    career_interest: [] as string[],
-    ethnicity: [] as string[],
-    gender: "",
-
-    schoolari_goals: [] as string[],
-  });
-
-  useEffect(() => {
-    async function fetchProfile() {
-      const profile = await getProfile();
-      if (profile) {
-        if (profile.onboarding_complete) {
-          router.replace("/dashboard");
-          return;
-        }
-        setStep(profile.onboarding_step || 1);
-        setIsParentAccount(profile.account_type === "parent");
-
-        // Map custom "Other" values back to the UI state
-        const knownExtra = new Set(EXTRACURRICULAR_OPTIONS);
-        let loadedExtras = profile.extracurricular_activities || [];
-        let foundCustomExtra = "";
-        loadedExtras = loadedExtras.map((x: string) => {
-          if (!knownExtra.has(x) && x !== "Other") {
-            foundCustomExtra = x;
-            return "Other";
-          }
-          return x;
-        });
-        setCustomExtracurricular(foundCustomExtra);
-
-        const knownCareer = new Set(CAREER_INTERESTS_OPTIONS);
-        let loadedCareers = profile.career_interest || [];
-        let foundCustomCareer = "";
-        loadedCareers = loadedCareers.map((x: string) => {
-          if (!knownCareer.has(x) && x !== "Other") {
-            foundCustomCareer = x;
-            return "Other";
-          }
-          return x;
-        });
-        setCustomCareerInterest(foundCustomCareer);
-
-        setForm((prev) => ({
-          ...prev,
-          account_type: profile.account_type || "",
-          student_first_name: profile.student_first_name || "",
-          student_last_name: profile.student_last_name || "",
-          student_email: profile.student_email || "",
-          student_phone: profile.student_phone || "",
-          parent_first_name: profile.parent_first_name || "",
-          parent_last_name: profile.parent_last_name || "",
-          parent_email: profile.parent_email || "",
-          parent_phone: profile.parent_phone || "",
-          high_school_name: profile.high_school_name || "",
-          state: profile.state || "",
-          grade_level: profile.grade_level || "",
-
-          unweighted_gpa: profile.unweighted_gpa || "",
-          weighted_gpa: profile.weighted_gpa || "",
-          expected_graduation_year: profile.expected_graduation_year || "",
-          applied_to_college: profile.applied_to_college || "",
-          enrolled_in_college: profile.enrolled_in_college || "",
-          intended_major: profile.intended_major || [],
-          preferred_college_type: profile.preferred_college_type || [],
-          top_3_schools: profile.top_3_schools?.length === 3 ? profile.top_3_schools : ["", "", ""],
-
-          extracurricular_activities: loadedExtras,
-          career_interest: loadedCareers,
-          ethnicity: profile.ethnicity || [],
-          gender: profile.gender || "",
-          schoolari_goals: profile.schoolari_goals || [],
-        }));
-      }
-      setLoadingInitial(false);
-    }
-    fetchProfile();
-  }, [router]);
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setUploading(true);
-    const supabase = createClient();
-    try {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) throw new Error("Not logged in");
-
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${userData.user.id}-${Math.random()}.${fileExt}`;
-      const filePath = `vault/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('documents')
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data: publicUrlData } = supabase.storage
-        .from('documents')
-        .getPublicUrl(filePath);
-
-      const displayName = customDocName.trim() || file.name;
-
-      const { data: insertedDoc } = await supabase.from('documents').insert({
-        user_id: userData.user.id,
-        name: displayName,
-        type: uploadType,
-        file_url: publicUrlData.publicUrl,
-        size_bytes: file.size
-      }).select('id').maybeSingle();
-
-      setUploadedDocs([...uploadedDocs, { id: insertedDoc?.id, name: displayName, type: uploadType, filePath }]);
-      toast.success('Document uploaded!');
-    } catch (err: any) {
-      console.error(err);
-      Swal.fire('Upload Error', err.message, 'error');
-    } finally {
-      setUploading(false);
-      setCustomDocName("");
-      if (fileInputRef.current) fileInputRef.current.value = "";
+  // Helper for Donor Interests toggle
+  const toggleInterest = (interest: string) => {
+    if (selectedInterests.includes(interest)) {
+      setSelectedInterests(selectedInterests.filter((i) => i !== interest));
+    } else {
+      setSelectedInterests([...selectedInterests, interest]);
     }
   };
 
-  const handleRemoveDoc = async (indexToRemove: number) => {
-    const doc = uploadedDocs[indexToRemove];
-    const supabase = createClient();
-    try {
-      if (doc?.id) {
-        await supabase.from('documents').delete().eq('id', doc.id);
-      }
-      if (doc?.filePath) {
-        await supabase.storage.from('documents').remove([doc.filePath]);
-      }
-      setUploadedDocs(uploadedDocs.filter((_, idx) => idx !== indexToRemove));
-      toast.success('Document removed');
-    } catch (err: any) {
-      console.error("Failed to remove document:", err);
-      toast.error('Failed to remove document');
-    }
-  };
-
-  const handleNext = async (currentStep: number) => {
+  // Step 2 Submission: Register Account
+  async function handleAccountCreation(e: React.FormEvent) {
+    e.preventDefault();
     setError("");
 
-    if (currentStep === 1) {
-      if (!form.student_first_name || !form.student_last_name || !form.student_email || !form.student_phone) {
-        setError("Please fill out all student fields."); return;
-      }
-      if (!form.parent_first_name || !form.parent_last_name || !form.parent_email || !form.parent_phone) {
-        setError("Please fill out all parent fields."); return;
-      }
-      if (!form.grade_level || !form.state || !form.high_school_name) {
-        setError("Please fill out the school and state fields."); return;
-      }
+    // Validate password (min 8 chars, at least 1 number)
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters long.");
+      return;
+    }
+    if (!/\d/.test(password)) {
+      setError("Password must contain at least one number.");
+      return;
     }
 
-    startTransition(async () => {
-      let payload: any = { ...form };
-      if (currentStep === 4) {
-        payload.onboarding_complete = true;
+    if ((selectedRole === "student" || selectedRole === "parent") && !termsAgreed) {
+      setError("You must agree to the Terms of Service to continue.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          role: selectedRole,
+          email,
+          password,
+          firstName: selectedRole === "student" || selectedRole === "parent" ? firstName : "",
+          name: selectedRole === "donor" ? firstName : "",
+          lastName,
+          phone,
+          smsOptIn,
+          termsAgreed,
+          organizationName: selectedRole === "organization" ? organizationName : "",
+          contactName: selectedRole === "organization" ? contactName : "",
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        setError(data.error || "Failed to create account.");
+        setLoading(false);
+        return;
       }
 
-      // Filter out empty top_3_schools
-      payload.top_3_schools = form.top_3_schools.filter(Boolean);
-
-      // Inject custom text for "Other" selections when saving
-      if (payload.extracurricular_activities.includes("Other") && customExtracurricular.trim() !== "") {
-        payload.extracurricular_activities = payload.extracurricular_activities.map((x: string) => x === "Other" ? customExtracurricular.trim() : x);
-      } else if (payload.extracurricular_activities.includes("Other")) {
-        payload.extracurricular_activities = payload.extracurricular_activities.filter((x: string) => x !== "Other");
+      // Pre-fill campaign title based on role
+      if (selectedRole === "student") {
+        setCampaignTitle(`${firstName ? firstName + "'s" : "My"} Micro-Scholarship Campaign`);
+      } else if (selectedRole === "parent") {
+        setCampaignTitle(`College Support Fund for My Child`);
+      } else if (selectedRole === "organization") {
+        setCampaignTitle(`${organizationName ? organizationName + " Scholarship Fund" : "Community Scholarship Fund"}`);
+      } else if (selectedRole === "donor") {
+        setCampaignTitle(`${firstName ? firstName + "'s" : "My"} Student Giving Fund`);
       }
 
-      if (payload.career_interest.includes("Other") && customCareerInterest.trim() !== "") {
-        payload.career_interest = payload.career_interest.map((x: string) => x === "Other" ? customCareerInterest.trim() : x);
-      } else if (payload.career_interest.includes("Other")) {
-        payload.career_interest = payload.career_interest.filter((x: string) => x !== "Other");
-      }
-
-      const nextStep = currentStep === 4 ? 4 : currentStep + 1;
-      const result = await saveOnboardingStep(nextStep, payload);
-
-      if (result.error) {
-        setError(result.error);
-      } else {
-        if (currentStep === 4) {
-          setDone(true);
-        } else {
-          setStep(nextStep);
-          window.scrollTo(0, 0);
-        }
-      }
-    });
-  };
-
-  const handleSkip = (isParentSkip = false) => {
-    setError("");
-    startTransition(async () => {
-      const payload: any = { ...form };
-      if (isParentSkip) {
-        payload.parent_skipped_to_end = true;
-      } else {
-        payload.onboarding_complete = true;
-      }
-      const result = await saveOnboardingStep(4, payload);
-
-      if (result.error) {
-        setError(result.error);
-      } else {
-        setDone(true);
-      }
-    });
-  };
-
-  if (loadingInitial) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <span className="w-8 h-8 border-4 border-violet-200 border-t-violet-600 rounded-full animate-spin" />
-      </div>
-    );
+      setLoading(false);
+      setStep(3); // Advance to embedded campaign creation
+    } catch (err: any) {
+      setError(err.message || "Something went wrong.");
+      setLoading(false);
+    }
   }
 
-  if (done) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        <div className="bg-white p-8 rounded-3xl shadow-xl shadow-slate-200/50 max-w-lg w-full text-center border border-slate-100">
-          <div className="flex justify-center mb-6">
-            <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center">
-              <CheckCircle2 className="w-10 h-10 text-emerald-500" />
-            </div>
-          </div>
-          <h2 className="text-3xl font-extrabold text-slate-900 mb-2">YOUR SCHOOLARI AI DASHBOARD IS READY!</h2>
-          <p className="text-slate-500 mb-6">
-            {form.student_first_name || "Student"}, your account is ready. We've personalized your experience based on your profile so you can access all the AI tools, resources, and guidance that matter most for your goals and aspirations.
-          </p>
-          <Button
-            onClick={() => router.push("/dashboard")}
-            className="w-full h-12 rounded-xl text-base font-bold bg-gradient-to-r from-violet-600 to-purple-700 hover:from-violet-700 hover:to-purple-800 shadow-lg shadow-purple-200"
-          >
-            Continue <ArrowRight className="w-4 h-4 ml-2" />
-          </Button>
-        </div>
-      </div>
-    );
+  // Step 3 Submission: Embedded Campaign Creation
+  async function handleCampaignCreation(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/campaigns/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          campaignTitle: campaignTitle.trim() || "My Campaign",
+          campaignStory: campaignStory.trim(),
+          goalAmount: Number(goalAmount) || 0,
+          donationFrequency,
+          givingInterests: selectedRole === "donor" ? selectedInterests : [],
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        setError(data.error || "Failed to create campaign.");
+        setLoading(false);
+        return;
+      }
+
+      setLoading(false);
+      setStep(4); // Advance to confirmation
+    } catch (err: any) {
+      setError(err.message || "Failed to save campaign.");
+      setLoading(false);
+    }
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col items-center pt-32 pb-12 px-4 sm:px-6 lg:px-8">
-      <div className="fixed top-0 left-0 w-full bg-slate-50/95 backdrop-blur-sm z-50 pt-6 pb-6 sm:pt-8 sm:pb-14">
-        <div className="max-w-4xl w-full mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between w-full">
-            {STEPS.map((s, index) => {
-              const isCompleted = step > s.id;
-              const isCurrent = step === s.id;
-              return (
-                <div key={s.id} className="flex items-center flex-1 last:flex-none">
-                  <div className="relative flex flex-col items-center">
-                    <div className={cn(
-                      "w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300 z-10 bg-white",
-                      isCompleted ? "bg-emerald-500 border-emerald-500 text-white shadow-md shadow-emerald-500/20" :
-                        isCurrent ? "border-emerald-500 text-emerald-600 ring-4 ring-emerald-500/10" :
-                          "border-slate-200 text-slate-400"
-                    )}>
-                      {isCompleted ? <Check className="w-5 h-5" /> : <span className="font-semibold text-sm">{s.id}</span>}
-                    </div>
-
-                    <div className="absolute top-12 left-1/2 -translate-x-1/2 w-28 text-center hidden sm:block">
-                      <span className={cn(
-                        "text-xs font-medium transition-colors duration-300",
-                        isCompleted ? "text-slate-800" :
-                          isCurrent ? "text-emerald-700 font-bold" :
-                            "text-slate-400"
-                      )}>
-                        {s.name}
-                      </span>
-                    </div>
-                  </div>
-
-                  {index < STEPS.length - 1 && (
-                    <div className={cn(
-                      "flex-auto h-[2px] mx-2 transition-all duration-300",
-                      step > s.id ? "bg-emerald-500" : "bg-slate-200"
-                    )} />
-                  )}
-                </div>
-              )
-            })}
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
+      {/* Progress Header */}
+      {step < 4 && (
+        <div className="px-6 py-2.5 sm:px-7 sm:py-3 border-b border-slate-100 bg-slate-50/70">
+          <div className="flex items-center justify-between text-[11px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+            <span>
+              {step === 1 && "Step 1 of 3: Select Your Role"}
+              {step === 2 && "Step 2 of 3: Create Your Account"}
+              {step === 3 && "Step 3 of 3: Micro-Scholarship Campaign"}
+            </span>
+            <span className="text-[#1A6FD4] font-semibold">{Math.round((step / 3) * 100)}% Complete</span>
+          </div>
+          <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+            <div
+              className="bg-gradient-to-r from-[#1A6FD4] to-[#4CAF39] h-full transition-all duration-300"
+              style={{ width: `${(step / 3) * 100}%` }}
+            />
           </div>
         </div>
-      </div>
+      )}
 
-      <div className="max-w-2xl w-full mx-auto">
-        <div className="bg-white p-6 sm:p-10 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100">
-          <div className="mb-8">
-            <h2 className="text-3xl font-extrabold text-slate-900">{STEPS.find(s => s.id === step)?.name}</h2>
-            {isParentAccount && step === 2 && (
-              <div className="mt-4 px-4 py-3 bg-violet-50 border border-violet-100 rounded-xl text-violet-700 text-sm font-medium flex flex-col justify-between items-start">
-                <p className="flex-1">Parents: You may skip this portion and have your student complete their profile. Your student will receive an email to create their account and start their journey to success with Schoolari.</p>
-                <Button
-                  onClick={() => handleSkip(true)}
-                  disabled={isPending}
-                  className="mt-4 self-end bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm font-bold whitespace-nowrap transition-colors"
-                >
-                  {isPending ? "Skipping..." : "Skip & Allow Student to Complete"}
-                </Button>
+      <div className="p-5 sm:p-6">
+        {error && (
+          <div className="mb-3.5 p-3 rounded-xl bg-red-50 border border-red-100 text-xs sm:text-sm text-red-600 flex items-start gap-2.5">
+            <span className="text-red-400 font-bold">⚠</span>
+            <span>{error}</span>
+          </div>
+        )}
+
+        {/* ─────────────────────────────────────────────────────────────
+            PART A: ROLE SELECTION
+        ───────────────────────────────────────────────────────────── */}
+        {step === 1 && (
+          <div className="space-y-4 animate-in fade-in duration-200">
+            <div>
+              <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
+                Welcome to Dormoney 👋
+              </h1>
+              <p className="text-slate-500 mt-0.5 text-xs sm:text-sm">
+                Select your account type to personalize your experience.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Option 1: Student */}
+              <button
+                type="button"
+                onClick={() => setSelectedRole("student")}
+                className={`p-3.5 sm:p-4 rounded-xl border-2 text-left transition-all flex items-start gap-3.5 ${
+                  selectedRole === "student"
+                    ? "border-[#1A6FD4] bg-blue-50/50 shadow-sm ring-1 ring-[#1A6FD4]/20"
+                    : "border-slate-200 hover:border-slate-300 bg-white"
+                }`}
+              >
+                <div className="w-10 h-10 rounded-xl bg-blue-100 text-[#1A6FD4] flex items-center justify-center shrink-0 mt-0.5">
+                  <GraduationCap className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-sm sm:text-base">I'm a Student</h3>
+                  <p className="text-xs text-slate-500 mt-0.5 leading-snug">
+                    Create your micro-scholarship campaign and receive direct donations.
+                  </p>
+                </div>
+              </button>
+
+              {/* Option 2: Parent */}
+              <button
+                type="button"
+                onClick={() => setSelectedRole("parent")}
+                className={`p-3.5 sm:p-4 rounded-xl border-2 text-left transition-all flex items-start gap-3.5 ${
+                  selectedRole === "parent"
+                    ? "border-[#1A6FD4] bg-blue-50/50 shadow-sm ring-1 ring-[#1A6FD4]/20"
+                    : "border-slate-200 hover:border-slate-300 bg-white"
+                }`}
+              >
+                <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0 mt-0.5">
+                  <Users className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-sm sm:text-base">I'm a Parent</h3>
+                  <p className="text-xs text-slate-500 mt-0.5 leading-snug">
+                    Set up and manage a micro-scholarship campaign for your child.
+                  </p>
+                </div>
+              </button>
+
+              {/* Option 3: Donor / Backer */}
+              <button
+                type="button"
+                onClick={() => setSelectedRole("donor")}
+                className={`p-3.5 sm:p-4 rounded-xl border-2 text-left transition-all flex items-start gap-3.5 ${
+                  selectedRole === "donor"
+                    ? "border-[#4CAF39] bg-green-50/50 shadow-sm ring-1 ring-[#4CAF39]/20"
+                    : "border-slate-200 hover:border-slate-300 bg-white"
+                }`}
+              >
+                <div className="w-10 h-10 rounded-xl bg-green-100 text-[#4CAF39] flex items-center justify-center shrink-0 mt-0.5">
+                  <Heart className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-sm sm:text-base">I'm a Donor / Backer</h3>
+                  <p className="text-xs text-slate-500 mt-0.5 leading-snug">
+                    Support students and funds directly through micro-donations.
+                  </p>
+                </div>
+              </button>
+
+              {/* Option 4: Organization */}
+              <button
+                type="button"
+                onClick={() => setSelectedRole("organization")}
+                className={`p-3.5 sm:p-4 rounded-xl border-2 text-left transition-all flex items-start gap-3.5 ${
+                  selectedRole === "organization"
+                    ? "border-[#1A6FD4] bg-blue-50/50 shadow-sm ring-1 ring-[#1A6FD4]/20"
+                    : "border-slate-200 hover:border-slate-300 bg-white"
+                }`}
+              >
+                <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 mt-0.5">
+                  <Building2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-sm sm:text-base">I'm an Organization</h3>
+                  <p className="text-xs text-slate-500 mt-0.5 leading-snug">
+                    Create and fund micro-scholarship programs as a foundation.
+                  </p>
+                </div>
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between pt-3.5 border-t border-slate-100">
+              <Link href="/login" className="text-xs sm:text-sm text-slate-500 hover:text-slate-800">
+                Already have an account? <span className="font-bold text-[#1A6FD4]">Log In</span>
+              </Link>
+              <Button
+                type="button"
+                onClick={() => setStep(2)}
+                className="h-10 sm:h-11 px-6 sm:px-7 rounded-xl font-bold bg-[#1A6FD4] hover:bg-[#155ab0] text-white shadow-md shadow-blue-200 text-sm"
+              >
+                Continue <ArrowRight className="w-4 h-4 ml-1.5" />
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* ─────────────────────────────────────────────────────────────
+            PART B: ACCOUNT CREATION
+        ───────────────────────────────────────────────────────────── */}
+        {step === 2 && (
+          <form onSubmit={handleAccountCreation} className="space-y-4 animate-in fade-in duration-200">
+            <div>
+              <span className="text-xs font-bold text-[#1A6FD4] uppercase tracking-wider">
+                {selectedRole === "student" && "Student Account"}
+                {selectedRole === "parent" && "Parent Account"}
+                {selectedRole === "donor" && "Donor & Backer Account"}
+                {selectedRole === "organization" && "Organization Account"}
+              </span>
+              <h2 className="text-2xl font-extrabold text-slate-900 mt-1">
+                Create Your Dormoney Account
+              </h2>
+            </div>
+
+            {/* Student & Parent Fields */}
+            {(selectedRole === "student" || selectedRole === "parent") && (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs sm:text-sm font-semibold text-slate-700">First Name</Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <Input
+                        type="text"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        placeholder="John"
+                        required
+                        className="pl-10 h-10 sm:h-11 rounded-xl border-slate-200"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs sm:text-sm font-semibold text-slate-700">Last Name</Label>
+                    <Input
+                      type="text"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      placeholder="Doe"
+                      className="h-10 sm:h-11 rounded-xl border-slate-200"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs sm:text-sm font-semibold text-slate-700">Email Address</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <Input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="you@example.com"
+                        required
+                        className="pl-10 h-10 sm:h-11 rounded-xl border-slate-200"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs sm:text-sm font-semibold text-slate-700">Password</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <Input
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Min. 8 chars, 1 number"
+                        required
+                        minLength={8}
+                        className="pl-10 h-10 sm:h-11 rounded-xl border-slate-200"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs sm:text-sm font-semibold text-slate-700">Mobile Number (Optional)</Label>
+                  <PhoneInput
+                    id="phone"
+                    name="phone"
+                    value={phone}
+                    onChange={setPhone}
+                  />
+                </div>
+
+                <div className="space-y-2 pt-1">
+                  {/* SMS Opt-in Checkbox */}
+                  <label className="flex items-start gap-2.5 p-2.5 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={smsOptIn}
+                      onChange={(e) => setSmsOptIn(e.target.checked)}
+                      className="mt-0.5 h-4 w-4 rounded text-[#1A6FD4] focus:ring-[#1A6FD4]"
+                    />
+                    <span className="text-xs text-slate-600 leading-snug">
+                      Yes, send me scholarship deadline reminders and updates via text.
+                    </span>
+                  </label>
+
+                  {/* Required TOS Checkbox */}
+                  <label className="flex items-start gap-2.5 p-2.5 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={termsAgreed}
+                      onChange={(e) => setTermsAgreed(e.target.checked)}
+                      required
+                      className="mt-0.5 h-4 w-4 rounded text-[#1A6FD4] focus:ring-[#1A6FD4]"
+                    />
+                    <span className="text-xs text-slate-600 leading-snug">
+                      I agree to the <Link href="/terms" className="text-[#1A6FD4] font-semibold underline">Terms of Service</Link> and <Link href="/privacy" className="text-[#1A6FD4] font-semibold underline">Privacy Policy</Link>.
+                    </span>
+                  </label>
+                </div>
+              </>
+            )}
+
+            {/* Donor Fields */}
+            {selectedRole === "donor" && (
+              <>
+                <div className="space-y-1.5">
+                  <Label className="text-xs sm:text-sm font-semibold text-slate-700">Full Name</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <Input
+                      type="text"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      placeholder="Jane Donor"
+                      required
+                      className="pl-10 h-10 sm:h-11 rounded-xl border-slate-200"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs sm:text-sm font-semibold text-slate-700">Email Address</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <Input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="you@example.com"
+                        required
+                        className="pl-10 h-10 sm:h-11 rounded-xl border-slate-200"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs sm:text-sm font-semibold text-slate-700">Password</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <Input
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Min. 8 characters"
+                        required
+                        minLength={8}
+                        className="pl-10 h-10 sm:h-11 rounded-xl border-slate-200"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Organization Fields */}
+            {selectedRole === "organization" && (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs sm:text-sm font-semibold text-slate-700">Organization Name</Label>
+                    <div className="relative">
+                      <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <Input
+                        type="text"
+                        value={organizationName}
+                        onChange={(e) => setOrganizationName(e.target.value)}
+                        placeholder="Future Leaders Foundation"
+                        required
+                        className="pl-10 h-10 sm:h-11 rounded-xl border-slate-200"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs sm:text-sm font-semibold text-slate-700">Contact Name</Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <Input
+                        type="text"
+                        value={contactName}
+                        onChange={(e) => setContactName(e.target.value)}
+                        placeholder="Sarah Jenkins"
+                        required
+                        className="pl-10 h-10 sm:h-11 rounded-xl border-slate-200"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs sm:text-sm font-semibold text-slate-700">Work Email Address</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <Input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="contact@organization.org"
+                        required
+                        className="pl-10 h-10 sm:h-11 rounded-xl border-slate-200"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs sm:text-sm font-semibold text-slate-700">Password</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <Input
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Min. 8 characters"
+                        required
+                        minLength={8}
+                        className="pl-10 h-10 sm:h-11 rounded-xl border-slate-200"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+
+            <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setStep(1)}
+                className="h-11 px-6 rounded-xl border-slate-200 text-sm font-semibold"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" /> Back
+              </Button>
+              <Button
+                type="submit"
+                disabled={loading}
+                className="h-11 sm:h-12 px-7 sm:px-8 rounded-xl font-bold bg-[#1A6FD4] hover:bg-[#155ab0] text-white shadow-lg shadow-blue-200 text-sm sm:text-base"
+              >
+                {loading ? "Creating Account..." : "Continue to Campaign"} <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </div>
+          </form>
+        )}
+
+        {/* ─────────────────────────────────────────────────────────────
+            PART C: EMBEDDED CAMPAIGN CREATION (MANDATORY)
+        ───────────────────────────────────────────────────────────── */}
+        {step === 3 && (
+          <form onSubmit={handleCampaignCreation} className="space-y-4 animate-in fade-in duration-200">
+            <div>
+              <span className="text-xs font-bold text-[#4CAF39] uppercase tracking-wider flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4" /> Micro-Scholarship Step (Mandatory)
+              </span>
+              <h2 className="text-2xl font-extrabold text-slate-900 mt-1">
+                {selectedRole === "student" && "Create Your Micro-Scholarship Campaign"}
+                {selectedRole === "parent" && "Create a Campaign for Your Child"}
+                {selectedRole === "organization" && "Create Your Scholarship Fund"}
+                {selectedRole === "donor" && "Tell Us Who You Want to Support"}
+              </h2>
+              <p className="text-slate-500 text-sm mt-1">
+                {selectedRole === "donor"
+                  ? "Select giving areas you are passionate about to match with eligible student campaigns."
+                  : "Launch your micro-scholarship immediately. Backers and donors can contribute to your goal."}
+              </p>
+            </div>
+
+            {/* Donor Giving Interests Multi-Select (for Donors) */}
+            {selectedRole === "donor" && (
+              <div className="space-y-2.5 p-3.5 sm:p-4 rounded-xl border border-slate-200 bg-slate-50/60">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs sm:text-sm font-bold text-slate-800">
+                    Target Giving Interests (Click to toggle)
+                  </Label>
+                  <span className="text-[11px] text-slate-500 font-medium">
+                    {selectedInterests.length} selected
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                  {DONOR_GIVING_INTERESTS.map((interest) => {
+                    const isSelected = selectedInterests.includes(interest);
+                    return (
+                      <button
+                        key={interest}
+                        type="button"
+                        onClick={() => toggleInterest(interest)}
+                        className={`py-2 px-3 rounded-lg border text-center font-bold text-xs sm:text-sm transition-all ${
+                          isSelected
+                            ? "border-[#4CAF39] bg-green-100/70 text-[#2e7d32] shadow-xs ring-1 ring-[#4CAF39]"
+                            : "border-slate-200 hover:border-slate-300 text-slate-600 bg-white"
+                        }`}
+                      >
+                        {interest}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             )}
-          </div>
 
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl text-sm text-red-600 flex gap-2">
-              <span>⚠</span> {error}
+            {/* Campaign Fields (All Roles: Student, Parent, Organization, and Donor) */}
+            <div className="space-y-1.5">
+              <Label className="text-xs sm:text-sm font-semibold text-slate-700">
+                {selectedRole === "donor" ? "Giving Fund / Campaign Title" : "Campaign Title"}
+              </Label>
+              <Input
+                type="text"
+                value={campaignTitle}
+                onChange={(e) => setCampaignTitle(e.target.value)}
+                placeholder={
+                  selectedRole === "donor"
+                    ? "e.g. My STEM & First-Gen Student Giving Fund"
+                    : "e.g. Help Me Cover My First Year Tuition & Books"
+                }
+                required
+                className="h-10 sm:h-11 text-sm rounded-xl border-slate-200"
+              />
             </div>
-          )}
 
-          <div className="space-y-8">
-            {step === 1 && (
-              <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <div className="space-y-3">
-                    <Label className="text-sm font-bold text-slate-700">Student's First Name</Label>
-                    <Input value={form.student_first_name} onChange={(e) => setForm({ ...form, student_first_name: e.target.value })} className="h-12 rounded-xl" placeholder="e.g. John" />
-                  </div>
-                  <div className="space-y-3">
-                    <Label className="text-sm font-bold text-slate-700">Student's Last Name</Label>
-                    <Input value={form.student_last_name} onChange={(e) => setForm({ ...form, student_last_name: e.target.value })} className="h-12 rounded-xl" placeholder="e.g. Doe" />
-                  </div>
-                  <div className="space-y-3">
-                    <Label className="text-sm font-bold text-slate-700">Student's Email Address</Label>
-                    <Input value={form.student_email} onChange={(e) => setForm({ ...form, student_email: e.target.value })} disabled={form.account_type === 'student'} className={form.account_type === 'student' ? "h-12 rounded-xl bg-slate-100 text-slate-500 cursor-not-allowed" : "h-12 rounded-xl"} placeholder="john@example.com" type="email" />
-                  </div>
-                  <div className="space-y-3">
-                    <Label className="text-sm font-bold text-slate-700">Student's Cell Phone</Label>
-                    <PhoneInput value={form.student_phone} onChange={(val) => setForm({ ...form, student_phone: val })} disabled={form.account_type === 'student'} className={form.account_type === 'student' ? "bg-slate-100 cursor-not-allowed" : ""} />
-                  </div>
-                </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs sm:text-sm font-semibold text-slate-700">
+                {selectedRole === "donor" ? "Giving Mission & Story" : "Campaign Story"}
+              </Label>
+              <textarea
+                rows={3}
+                value={campaignStory}
+                onChange={(e) => setCampaignStory(e.target.value)}
+                placeholder={
+                  selectedRole === "donor"
+                    ? "Share who you want to support and what inspires your contributions..."
+                    : "Share your goals, academic journey, and what this micro-scholarship fund supports..."
+                }
+                required
+                className="w-full p-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#1A6FD4]"
+              />
+            </div>
 
-                <hr className="border-slate-100" />
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <div className="space-y-3">
-                    <Label className="text-sm font-bold text-slate-700">Parent's First Name</Label>
-                    <Input value={form.parent_first_name} onChange={(e) => setForm({ ...form, parent_first_name: e.target.value })} className="h-12 rounded-xl" placeholder="e.g. jane" />
-                  </div>
-                  <div className="space-y-3">
-                    <Label className="text-sm font-bold text-slate-700">Parent's Last Name</Label>
-                    <Input value={form.parent_last_name} onChange={(e) => setForm({ ...form, parent_last_name: e.target.value })} className="h-12 rounded-xl" placeholder="e.g. Doe" />
-                  </div>
-                  <div className="space-y-3">
-                    <Label className="text-sm font-bold text-slate-700">Parent's Email Address</Label>
-                    <Input value={form.parent_email} onChange={(e) => setForm({ ...form, parent_email: e.target.value })} disabled={form.account_type === 'parent'} className={form.account_type === 'parent' ? "h-12 rounded-xl bg-slate-100 text-slate-500 cursor-not-allowed" : "h-12 rounded-xl"} placeholder="jane@example.com" type="email" />
-                  </div>
-                  <div className="space-y-3">
-                    <Label className="text-sm font-bold text-slate-700">Parent's Cell Phone</Label>
-                    <PhoneInput value={form.parent_phone} onChange={(val) => setForm({ ...form, parent_phone: val })} disabled={form.account_type === 'parent'} className={form.account_type === 'parent' ? "bg-slate-100 cursor-not-allowed" : ""} />
-                  </div>
-                </div>
-
-                <hr className="border-slate-100" />
-
-                <div className="space-y-3">
-                  <Label className="text-sm font-bold text-slate-700">Student Grade Level</Label>
-                  <select value={form.grade_level} onChange={(e) => setForm({ ...form, grade_level: e.target.value })} className="flex h-12 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-violet-600">
-                    <option value="" disabled>Select grade...</option>
-                    {GRADE_LEVEL_OPTIONS.map((g) => <option key={g} value={g}>{g}</option>)}
-                  </select>
-                </div>
-                <div className="space-y-3">
-                  <Label className="text-sm font-bold text-slate-700">High School Name</Label>
-                  <Input value={form.high_school_name} onChange={(e) => setForm({ ...form, high_school_name: e.target.value })} className="h-12 rounded-xl" placeholder="Lincoln High School" />
-                </div>
-                <div className="space-y-3">
-                  <Label className="text-sm font-bold text-slate-700">State</Label>
-                  <select value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} className="flex h-12 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-violet-600">
-                    <option value="" disabled>Select state...</option>
-                    {US_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                </div>
-              </>
-            )}
-
-            {step === 2 && (
-              <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <div className="space-y-3">
-                    <Label className="text-sm font-bold text-slate-700">Current Unweighted GPA</Label>
-                    <select value={form.unweighted_gpa} onChange={(e) => setForm({ ...form, unweighted_gpa: e.target.value })} className="flex h-12 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-violet-600">
-                      <option value="" disabled>Select range...</option>
-                      {UNWEIGHTED_GPA_OPTIONS.map((g) => <option key={g} value={g}>{g}</option>)}
-                    </select>
-                  </div>
-                  <div className="space-y-3">
-                    <Label className="text-sm font-bold text-slate-700">Current Weighted GPA</Label>
-                    <select value={form.weighted_gpa} onChange={(e) => setForm({ ...form, weighted_gpa: e.target.value })} className="flex h-12 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-violet-600">
-                      <option value="" disabled>Select range...</option>
-                      {WEIGHTED_GPA_OPTIONS.map((g) => <option key={g} value={g}>{g}</option>)}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <Label className="text-sm font-bold text-slate-700">Expected Graduation Year</Label>
-                  <select value={form.expected_graduation_year} onChange={(e) => setForm({ ...form, expected_graduation_year: e.target.value })} className="flex h-12 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-violet-600">
-                    <option value="" disabled>Select year...</option>
-                    {EXPECTED_GRAD_YEARS.map((g) => <option key={g} value={g}>{g}</option>)}
-                  </select>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <div className="space-y-3">
-                    <Label className="text-sm font-bold text-slate-700">Applied to college yet?</Label>
-                    <select value={form.applied_to_college} onChange={(e) => setForm({ ...form, applied_to_college: e.target.value })} className="flex h-12 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-violet-600">
-                      <option value="" disabled>Select...</option>
-                      {APPLIED_OPTIONS.map((g) => <option key={g} value={g}>{g}</option>)}
-                    </select>
-                  </div>
-                  <div className="space-y-3">
-                    <Label className="text-sm font-bold text-slate-700">Enrolled in college?</Label>
-                    <select value={form.enrolled_in_college} onChange={(e) => setForm({ ...form, enrolled_in_college: e.target.value })} className="flex h-12 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-violet-600">
-                      <option value="" disabled>Select...</option>
-                      {ENROLLED_OPTIONS.map((g) => <option key={g} value={g}>{g}</option>)}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <Label className="text-sm font-bold text-slate-700">Intended Major (multi-select)</Label>
-                  <MultiSelectDropdown
-                    options={INTENDED_MAJORS}
-                    selected={form.intended_major}
-                    onChange={(val) => setForm({ ...form, intended_major: val })}
-                    placeholder="Select majors..."
-                  />
-                </div>
-
-                <div className="space-y-3">
-                  <Label className="text-sm font-bold text-slate-700">Preferred College Type (multi-select)</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {PREFERRED_COLLEGE_TYPES.map((option) => {
-                      const isActive = form.preferred_college_type.includes(option);
-                      return (
-                        <button key={option} onClick={() => setForm({ ...form, preferred_college_type: toggleArrayValue(form.preferred_college_type, option) })}
-                          className={cn("px-4 py-2 text-sm font-medium rounded-full border transition-all", isActive ? "border-violet-600 bg-violet-600 text-white" : "border-slate-200 text-slate-600 hover:bg-slate-50")}
-                        >{option}</button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <Label className="text-sm font-bold text-slate-700">Top 3 schools/colleges you are interested in applying to (optional)</Label>
-                  {[0, 1, 2].map(i => (
-                    <Input key={i} value={form.top_3_schools[i]} onChange={(e) => {
-                      const newSchools = [...form.top_3_schools];
-                      newSchools[i] = e.target.value;
-                      setForm({ ...form, top_3_schools: newSchools });
-                    }} className="h-12 rounded-xl mb-2" placeholder={`School/College ${i + 1}`} />
-                  ))}
-                </div>
-              </>
-            )}
-
-            {step === 3 && (
-              <>
-                <div className="space-y-3">
-                  <Label className="text-sm font-bold text-slate-700">Extracurricular activities (multi-select)</Label>
-                  <MultiSelectDropdown
-                    options={EXTRACURRICULAR_OPTIONS}
-                    selected={form.extracurricular_activities}
-                    onChange={(val) => setForm({ ...form, extracurricular_activities: val })}
-                    placeholder="Select activities..."
-                  />
-                  {form.extracurricular_activities.includes("Other") && (
-                    <div className="mt-3">
-                      <Label className="text-sm font-bold text-slate-700">Please specify other activity</Label>
-                      <Input
-                        value={customExtracurricular}
-                        onChange={(e) => setCustomExtracurricular(e.target.value)}
-                        className="h-12 rounded-xl mt-1"
-                        placeholder="Type your Other extracurricular activity..."
-                      />
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-3">
-                  <Label className="text-sm font-bold text-slate-700">Career interest (multi-select)</Label>
-                  <MultiSelectDropdown
-                    options={CAREER_INTERESTS_OPTIONS}
-                    selected={form.career_interest}
-                    onChange={(val) => setForm({ ...form, career_interest: val })}
-                    placeholder="Select interests..."
-                  />
-                  {form.career_interest.includes("Other") && (
-                    <div className="mt-3">
-                      <Label className="text-sm font-bold text-slate-700">Please specify other career interest</Label>
-                      <Input
-                        value={customCareerInterest}
-                        onChange={(e) => setCustomCareerInterest(e.target.value)}
-                        className="h-12 rounded-xl mt-1"
-                        placeholder="Type your Other career interest..."
-                      />
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-3">
-                  <Label className="text-sm font-bold text-slate-700">Ethnicity (Optional, multi-select)</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {ETHNICITY_OPTIONS.map((option) => {
-                      const isActive = form.ethnicity.includes(option);
-                      return (
-                        <button key={option} onClick={() => setForm({ ...form, ethnicity: toggleArrayValue(form.ethnicity, option) })}
-                          className={cn("px-4 py-2 text-sm font-medium rounded-full border transition-all", isActive ? "border-violet-600 bg-violet-600 text-white" : "border-slate-200 text-slate-600 hover:bg-slate-50")}
-                        >{option}</button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <Label className="text-sm font-bold text-slate-700">Gender (Optional)</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {GENDER_OPTIONS.map((option) => {
-                      const isActive = form.gender === option;
-                      return (
-                        <button key={option} onClick={() => setForm({ ...form, gender: option })}
-                          className={cn("px-4 py-2 text-sm font-medium rounded-full border transition-all", isActive ? "border-violet-600 bg-violet-600 text-white" : "border-slate-200 text-slate-600 hover:bg-slate-50")}
-                        >{option}</button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </>
-            )}
-
-            {step === 4 && (
-              <div className="space-y-6">
-                <div className="text-center mb-6">
-                  <p className="text-slate-600 font-medium">If you have a transcript, resume, or recommendation letter ready, upload it now so it's safely stored in your Schoolari Vault.</p>
-                </div>
-
-                <div className="space-y-3">
-                  <Label className="text-sm font-bold text-slate-700">Document Name (Optional)</Label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div className="space-y-1.5">
+                <Label className="text-xs sm:text-sm font-semibold text-slate-700">
+                  {selectedRole === "donor" ? "Pledge / Contribution Goal ($ USD)" : "Goal Amount ($ USD)"}
+                </Label>
+                <div className="relative">
+                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <Input
-                    value={customDocName}
-                    onChange={(e) => setCustomDocName(e.target.value)}
-                    placeholder="e.g. John Resume"
-                    className="h-12 rounded-xl"
+                    type="number"
+                    min="10"
+                    step="10"
+                    value={goalAmount}
+                    onChange={(e) => setGoalAmount(e.target.value)}
+                    placeholder={selectedRole === "donor" ? "1000" : "2500"}
+                    required
+                    className="pl-10 h-10 sm:h-11 text-sm rounded-xl border-slate-200"
                   />
-                  <p className="text-xs text-slate-500">Give your document a custom display name for your Vault.</p>
                 </div>
-
-                <div className="space-y-3">
-                  <Label className="text-sm font-bold text-slate-700">Document Type</Label>
-                  <select value={uploadType} onChange={(e) => setUploadType(e.target.value as "transcript" | "report_card" | "recommendation_letter" | "essay" | "resume" | "certificate" | "award" | "other")} className="flex h-12 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-violet-600">
-                    <option value="transcript">Transcript</option>
-                    <option value="resume">Resume</option>
-                    <option value="recommendation_letter">Recommendation Letters</option>
-                    <option value="essay">Essays</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
-
-                <div className="border-2 border-dashed border-slate-200 rounded-2xl p-8 text-center bg-slate-50/50 hover:bg-slate-50 transition-colors">
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleFileUpload}
-                    className="hidden"
-                    accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={uploading}
-                    className="mx-auto rounded-xl h-11 border-slate-300 font-semibold text-slate-700"
-                  >
-                    {uploading ? (
-                      <><span className="w-4 h-4 border-2 border-slate-400 border-t-slate-700 rounded-full animate-spin mr-2" /> Uploading...</>
-                    ) : (
-                      <>Upload Document</>
-                    )}
-                  </Button>
-                  <p className="mt-3 text-xs text-slate-500">PDF, DOC, or images up to 10MB</p>
-                </div>
-
-                {uploadedDocs.length > 0 && (
-                  <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm mt-4">
-                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Uploaded to Vault</h4>
-                    <ul className="space-y-2">
-                      {uploadedDocs.map((doc, idx) => (
-                        <li key={idx} className="flex items-center text-sm font-medium text-slate-700 bg-slate-50 px-3 py-2.5 rounded-xl border border-slate-100/80">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-500 mr-2.5 shrink-0" />
-                          <span className="truncate flex-1 font-semibold text-slate-800">{doc.name}</span>
-                          <span className="text-[11px] font-bold text-slate-400 uppercase bg-slate-200/60 px-2 py-0.5 rounded-md mr-2">{doc.type.replace('_', ' ')}</span>
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveDoc(idx)}
-                            className="p-1 text-slate-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
-                            title="Remove Document"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
               </div>
-            )}
 
-            <div className="pt-4 flex items-center justify-between gap-4">
-              {step > 1 && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => { setStep(step - 1); window.scrollTo(0, 0); }}
-                  className="h-12 rounded-xl border-slate-200 font-semibold text-slate-700 px-6 hidden sm:flex"
-                  disabled={isPending}
+              <div className="space-y-1.5">
+                <Label className="text-xs sm:text-sm font-semibold text-slate-700">
+                  {selectedRole === "donor" ? "Giving Frequency" : "Donation Frequency"}
+                </Label>
+                <select
+                  value={donationFrequency}
+                  onChange={(e) => setDonationFrequency(e.target.value as any)}
+                  className="w-full h-10 sm:h-11 rounded-xl border border-slate-200 px-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#1A6FD4]"
                 >
-                  Back
-                </Button>
-              )}
-              <div className="flex gap-3 flex-1 sm:justify-end">
-                {step === 4 && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => handleSkip(false)}
-                    className="h-12 rounded-xl font-semibold text-slate-500 px-6"
-                    disabled={isPending}
-                  >
-                    Skip
-                  </Button>
-                )}
-                <Button
-                  type="button"
-                  onClick={() => handleNext(step)}
-                  disabled={isPending}
-                  className="h-12 rounded-xl font-bold bg-violet-600 hover:bg-violet-700 text-white flex-1 sm:flex-none px-8 shadow-md shadow-violet-200 transition-all"
-                >
-                  {isPending ? (
-                    <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  ) : step === 4 ? "Finish Setup" : "Continue"}
-                </Button>
+                  <option value="daily">Daily</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="monthly">Monthly</option>
+                </select>
               </div>
             </div>
 
+            <div className="pt-4 border-t border-slate-100 flex justify-end">
+              <Button
+                type="submit"
+                disabled={loading}
+                className="h-11 sm:h-12 px-7 sm:px-8 rounded-xl font-bold bg-[#4CAF39] hover:bg-[#439c32] text-white shadow-lg shadow-green-200 text-sm sm:text-base"
+              >
+                {loading ? "Publishing Campaign..." : "Launch Campaign & Go to Dashboard"} <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </div>
+          </form>
+        )}
+
+        {/* ─────────────────────────────────────────────────────────────
+            CONFIRMATION SCREEN
+        ───────────────────────────────────────────────────────────── */}
+        {step === 4 && (
+          <div className="py-4 text-center space-y-4 animate-in zoom-in-95 duration-300">
+            <div className="w-14 h-14 rounded-full bg-green-100 text-[#4CAF39] mx-auto flex items-center justify-center shadow-md shadow-green-100">
+              <CheckCircle2 className="w-8 h-8" />
+            </div>
+
+            <div className="space-y-1.5">
+              <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900">
+                You're all set. Your campaign is live.
+              </h2>
+              <p className="text-slate-500 max-w-md mx-auto text-xs sm:text-sm">
+                {selectedRole === "donor"
+                  ? "Your giving interests have been saved. You can now discover and support active student micro-scholarships."
+                  : "Your micro-scholarship is published. Donors and community backers can now discover and contribute to your goal."}
+              </p>
+            </div>
+
+            <div className="pt-2">
+              <Button
+                type="button"
+                onClick={() => router.push("/dashboard")}
+                className="h-10 px-8 rounded-xl font-bold bg-[#1A6FD4] hover:bg-[#155ab0] text-white shadow-lg shadow-blue-200 text-sm"
+              >
+                Go to Dashboard
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

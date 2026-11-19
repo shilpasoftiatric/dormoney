@@ -47,25 +47,25 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
     label: "MAIN",
     items: [
       { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard", feature: "dashboard" },
-      { label: "Colleges", icon: Landmark, href: "/colleges", feature: "colleges" },
-      { label: "Scholarships", icon: Search, href: "/scholarships", feature: "scholarships" },
-      { label: "Tracker", icon: ClipboardList, href: "/tracker", feature: "tracker" },
+      { label: "Colleges", icon: Landmark, href: "/colleges", disabled: true },
+      { label: "Scholarships", icon: Search, href: "/scholarships", disabled: true },
+      { label: "Tracker", icon: ClipboardList, href: "/tracker", disabled: true },
     ],
   },
   {
     label: "ACADEMIC",
     items: [
-      { label: "Documents", icon: FolderOpen, href: "/documents", feature: "documents" },
-      { label: "Essays", icon: FileEdit, href: "/essays", feature: "essays" },
-      { label: "Resume Builder", icon: FileText, href: "/resume", feature: "resume" },
+      { label: "Documents", icon: FolderOpen, href: "/documents", disabled: true },
+      { label: "Essays", icon: FileEdit, href: "/essays", disabled: true },
+      { label: "Resume Builder", icon: FileText, href: "/resume", disabled: true },
     ],
   },
   {
     label: "CAREER & GROWTH",
     items: [
-      { label: "Jobs & Internships", icon: Briefcase, href: "/jobs", feature: "jobs" },
-      { label: "Earn Income", icon: DollarSign, href: "/income", feature: "income" },
-      { label: "College Coach", icon: GraduationCap, href: "/coaching", feature: "coaching" },
+      { label: "Jobs & Internships", icon: Briefcase, href: "/jobs", disabled: true },
+      { label: "Earn Income", icon: DollarSign, href: "/income", disabled: true },
+      { label: "College Coach", icon: GraduationCap, href: "/coaching", disabled: true },
     ],
   },
   {
@@ -79,7 +79,7 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
   {
     label: "ACCOUNT",
     items: [
-      { label: "Profile", icon: User, href: "/profile" },
+      { label: "Profile", icon: User, href: "/profile", disabled: true },
     ],
   },
 ];
@@ -97,7 +97,7 @@ interface SidebarProps {
   plan?: SubscriptionPlan;
 }
 
-export default function Sidebar({ siteName = "Schoolari", progressData, plan }: SidebarProps) {
+export default function Sidebar({ siteName = "Dormoney", progressData, plan }: SidebarProps) {
   const pathname = usePathname();
   const [selectedHref, setSelectedHref] = useState(pathname);
   const [isCardCollapsed, setIsCardCollapsed] = useState(true);
@@ -142,7 +142,7 @@ export default function Sidebar({ siteName = "Schoolari", progressData, plan }: 
 
       <div className={cn("flex flex-col h-full border-r border-slate-200 bg-slate-150 shrink-0 transition-all duration-300 ease-in-out relative print:hidden", isSidebarCollapsed ? "w-20" : "w-64")}>
         {/* Header / Logo Area */}
-        <div className={cn("flex items-center border-b border-slate-200 transition-colors h-[76px]", isSidebarCollapsed ? "justify-center" : "justify-between pl-5 pr-2 hover:bg-slate-50")}>
+        <div className={cn("flex items-center border-b border-slate-200 bg-white transition-colors h-20", isSidebarCollapsed ? "justify-center px-2" : "justify-between pl-4 pr-3 hover:bg-slate-50/80")}>
           <Link
             href="/dashboard"
             onClick={(e) => {
@@ -151,27 +151,35 @@ export default function Sidebar({ siteName = "Schoolari", progressData, plan }: 
                 setIsSidebarCollapsed(false);
               }
             }}
-            className={cn("flex items-center gap-2.5", isSidebarCollapsed && "hover:opacity-80 transition-opacity")}
+            className={cn("flex items-center gap-2.5 transition-transform hover:scale-[1.02]", isSidebarCollapsed && "hover:opacity-80 transition-opacity")}
           >
             {!isSidebarCollapsed ? (
               <Image
-                src="/images/Schoolari_logo.png"
-                alt="Schoolari"
-                width={150}
-                height={40}
-                className="h-10 w-auto object-contain"
+                src="/images/dormoney-logo.png"
+                alt={siteName || "Dormoney"}
+                width={240}
+                height={140}
+                className="h-14 sm:h-16 w-auto max-w-[175px] object-contain"
                 priority
               />
             ) : (
-              <div className="flex items-center justify-center w-9 h-9 shrink-0 rounded-xl bg-violet-100">
-                <GraduationCap className="w-5 h-5 text-violet-600" />
+              <div className="flex items-center justify-center w-11 h-11 shrink-0 rounded-xl bg-blue-50 border border-blue-100 shadow-xs">
+                <Image
+                  src="/images/dormoney-logo.png"
+                  alt={siteName || "Dormoney"}
+                  width={40}
+                  height={40}
+                  className="w-7 h-7 object-contain"
+                />
               </div>
             )}
           </Link>
           {!isSidebarCollapsed && (
             <button
               onClick={() => setIsSidebarCollapsed(true)}
-              className="text-slate-500 hover:text-slate-900 rounded-lg transition-colors p-2"
+              className="text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg p-2 transition-colors"
+              title="Collapse sidebar"
+              aria-label="Collapse sidebar"
             >
               <Menu className="w-5 h-5" />
             </button>
@@ -184,11 +192,11 @@ export default function Sidebar({ siteName = "Schoolari", progressData, plan }: 
           isSidebarCollapsed ? "px-0 pl-[20px]" : "px-3"
         )}>
 
-          {/* Ask Schoolari AI Card */}
+          {/* Ask Dormoney AI Card */}
           <Link
             href="/ai"
             onClick={() => setSelectedHref("/ai")}
-            title="Ask Schoolari AI"
+            title={`Ask ${siteName || "Dormoney"} AI`}
             className={cn(
               "flex items-center justify-between rounded-[24px] bg-slate-200 border border-slate-100 hover:bg-slate-100 transition-colors group",
               isSidebarCollapsed ? "w-12 h-12 justify-center rounded-2xl -ml-1" : "p-2",

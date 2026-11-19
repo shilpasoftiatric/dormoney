@@ -15,7 +15,6 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 import { getActiveContentBanners } from "@/app/actions/admin-content";
 
 interface BannerItem {
@@ -127,27 +126,9 @@ export function ContentBanners({ initialBanners = [] }: { initialBanners?: Banne
     }
   }, [initialBanners.length]);
 
-  // Real-time live sync for dashboard_content table
+  // Real-time live sync disabled for Phase 1
   useEffect(() => {
-    const supabase = createClient();
-    const channel = supabase
-      .channel("dashboard-content-live-sync")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "dashboard_content" },
-        () => {
-          getActiveContentBanners()
-            .then((items) => {
-              if (items) setBanners(items as BannerItem[]);
-            })
-            .catch(() => { });
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    // Phase 1 static/initial banners
   }, []);
 
   // Filter visible banners

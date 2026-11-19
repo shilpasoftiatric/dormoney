@@ -111,10 +111,9 @@ export function resolveUserPlan(
   return stripePlan;
 }
 
-// Check if a plan can access a feature
+// Check if a plan can access a feature — Phase 1: all features unlocked
 export function canAccessFeature(plan: SubscriptionPlan, feature: SubscriptionFeature): boolean {
-  if (!plan) return false;
-  return (featureAccessMap[feature] as SubscriptionPlan[]).includes(plan);
+  return true;
 }
 
 // Get the minimum plan required for a feature

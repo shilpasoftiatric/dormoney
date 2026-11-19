@@ -10,10 +10,10 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: {
       template: `%s | ${settings.site_name}`,
-      default: `${settings.site_name} — Student Success OS`,
+      default: `${settings.site_name} — Micro-Scholarships & Education Funding`,
     },
     description:
-      "The all-in-one platform for students to find scholarships, track applications, build their college portfolio, and earn income.",
+      "Dormoney is the micro-scholarship platform connecting students directly with donors, community backers, and education funds.",
   };
 }
 import { Toaster } from "sonner";

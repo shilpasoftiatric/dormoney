@@ -81,62 +81,23 @@ export function AIStateProvider({ children }: { children: React.ReactNode }) {
     fetchPlan();
   }, []);
 
-  // Prefetch Resume Data in background
+  // Prefetch Resume Data in background (Disabled in Phase 1)
   useEffect(() => {
-    const fetchResume = async () => {
-      if (userPlan === undefined) return;
-      if (!canAccessFeature(userPlan, "resume")) return;
-      if (resumeData || fetchingRef.current.resume) return;
-      fetchingRef.current.resume = true;
-      try {
-        const data = await getResumesAction();
-        setResumeData(data);
-      } catch (err) {
-        console.error("Prefetch resume failed:", err);
-      } finally {
-        fetchingRef.current.resume = false;
-      }
-    };
-    fetchResume();
-  }, [resumeData, userPlan]);
+    // Resume builder is a Phase 2 module, disabled in Phase 1
+    setResumeData({ resumes: [], active_resume_id: "" });
+  }, []);
 
-  // Prefetch Personalized Jobs Data in background (uses Claude AI)
+  // Prefetch Personalized Jobs Data in background (Disabled in Phase 1)
   useEffect(() => {
-    const fetchJobs = async () => {
-      if (userPlan === undefined) return;
-      if (!canAccessFeature(userPlan, "jobs")) return;
-      if (jobsData !== null || fetchingRef.current.jobs) return;
-      fetchingRef.current.jobs = true;
-      try {
-        const data = await getPersonalizedJobsAction();
-        setJobsData(data || []);
-      } catch (err) {
-        console.error("Prefetch jobs failed:", err);
-        setJobsData([]);
-      } finally {
-        fetchingRef.current.jobs = false;
-      }
-    };
-    fetchJobs();
-  }, [jobsData, userPlan]);
+    // Jobs & Internships feed is a Phase 2 module, disabled in Phase 1
+    setJobsData([]);
+  }, []);
 
-  // Prefetch Career Articles in background
+  // Prefetch Career Articles in background (Disabled in Phase 1)
   useEffect(() => {
-    const fetchArticles = async () => {
-      if (careerArticles !== null || fetchingRef.current.articles) return;
-      fetchingRef.current.articles = true;
-      try {
-        const data = await getCareerArticles();
-        setCareerArticles(data || []);
-      } catch (err) {
-        console.error("Prefetch articles failed:", err);
-        setCareerArticles([]);
-      } finally {
-        fetchingRef.current.articles = false;
-      }
-    };
-    fetchArticles();
-  }, [careerArticles]);
+    // Career center is a Phase 2 module, disabled in Phase 1
+    setCareerArticles([]);
+  }, []);
 
   // Listen to the Claude API hit cookie
   useEffect(() => {

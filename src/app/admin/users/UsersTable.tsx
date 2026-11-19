@@ -31,6 +31,27 @@ const PLAN_NAMES: Record<string, string> = {
   [process.env.NEXT_PUBLIC_STRIPE_PRICE_ELITE || ""]: "Elite",
 };
 
+const STAFF_ROLES_SET = new Set([
+  "admin",
+  "super_admin",
+  "staff",
+  "coach",
+  "content_editor",
+  "moderator",
+  "support_lead",
+]);
+
+function isStaffMember(u: any): boolean {
+  if (!u) return false;
+  return (
+    STAFF_ROLES_SET.has(u.role) ||
+    STAFF_ROLES_SET.has(u.account_type) ||
+    u.account_type === "staff" ||
+    u.account_type === "admin" ||
+    u.account_type === "super_admin"
+  );
+}
+
 function formatCycleMonth(rawCycle?: string) {
   if (!rawCycle || rawCycle === "Current") return "Current Cycle";
   if (/^\d{4}-\d{2}$/.test(rawCycle)) {
@@ -171,10 +192,24 @@ function UserActions({
 }
 
 function MemberTypeBadge({ user }: { user: any }) {
-  if (user.account_type === "parent") {
+  if (user.account_type === "parent" || user.role === "parent") {
     return (
       <span className="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded-md bg-slate-100 text-slate-700 border border-slate-200 whitespace-nowrap">
         👤 Parent
+      </span>
+    );
+  }
+  if (user.account_type === "donor" || user.role === "donor") {
+    return (
+      <span className="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 whitespace-nowrap">
+        💚 Donor
+      </span>
+    );
+  }
+  if (user.account_type === "organization" || user.role === "organization") {
+    return (
+      <span className="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded-md bg-amber-50 text-amber-700 border border-amber-200 whitespace-nowrap">
+        🏛 Organization
       </span>
     );
   }
@@ -565,22 +600,15 @@ export function UsersTable({ initialUsers }: { initialUsers: any[] }) {
 
 
   const filteredUsers = initialUsers.filter((u) => {
-    // Only students and parents should appear on the Users / Members page.
+    // Only students, parents, donors, and organizations should appear on the Users / Members page.
     // Exclude staff, admin, and super admin accounts (managed under Staff Management).
-    const isStaffOrAdmin =
-      u.role === "admin" ||
-      u.role === "super_admin" ||
-      (u.role && u.role !== "user") ||
-      u.account_type === "staff" ||
-      u.account_type === "admin";
-
-    if (isStaffOrAdmin) return false;
+    if (isStaffMember(u)) return false;
 
     let matchesRole = true;
     if (filterRole === "student") {
-      matchesRole = u.account_type !== "parent";
+      matchesRole = u.account_type === "student" || u.role === "student";
     } else if (filterRole === "parent") {
-      matchesRole = u.account_type === "parent";
+      matchesRole = u.account_type === "parent" || u.role === "parent";
     }
     if (!matchesRole) return false;
 
@@ -706,15 +734,7 @@ export function UsersTable({ initialUsers }: { initialUsers: any[] }) {
 
     // Identify selected users and check for privileged accounts (Admin, Super Admin, Staff)
     const selectedUsers = initialUsers.filter((u: any) => selectedIds.has(u.id));
-    const privilegedUsers = selectedUsers.filter((u: any) => {
-      return (
-        u.role === "admin" ||
-        u.role === "super_admin" ||
-        u.account_type === "admin" ||
-        u.account_type === "staff" ||
-        (u.role && u.role !== "user")
-      );
-    });
+    const privilegedUsers = selectedUsers.filter((u: any) => isStaffMember(u));
 
     let html = `
       <p style="font-size:14px;color:#64748b;line-height:1.5;">
@@ -1067,7 +1087,7 @@ export function UsersTable({ initialUsers }: { initialUsers: any[] }) {
 
             <div className="flex border-b border-slate-100 px-3 sm:px-6 shrink-0 bg-slate-50/50 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <button onClick={() => setManageTab("info")} className={`py-3 px-3 sm:px-4 text-xs sm:text-sm font-bold border-b-2 whitespace-nowrap shrink-0 transition-colors ${manageTab === "info" ? "border-violet-600 text-violet-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}>Basic Info</button>
-              {!(manageUser.role === "admin" || manageUser.role === "super_admin" || (manageUser.role && manageUser.role !== "user") || manageUser.account_type === "staff" || manageUser.account_type === "admin") && (
+              {!isStaffMember(manageUser) && (
                 <button onClick={() => setManageTab("subscription")} className={`py-3 px-3 sm:px-4 text-xs sm:text-sm font-bold border-b-2 whitespace-nowrap shrink-0 transition-colors ${manageTab === "subscription" ? "border-violet-600 text-violet-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}>Subscription</button>
               )}
               <button onClick={() => setManageTab("ai_usage")} className={`py-3 px-3 sm:px-4 text-xs sm:text-sm font-bold border-b-2 flex items-center gap-1.5 whitespace-nowrap shrink-0 transition-colors ${manageTab === "ai_usage" ? "border-violet-600 text-violet-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}>
@@ -1082,30 +1102,30 @@ export function UsersTable({ initialUsers }: { initialUsers: any[] }) {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div className="space-y-1">
                       <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                        {manageUser.role === "admin" || manageUser.role === "super_admin" || (manageUser.role && manageUser.role !== "user") || manageUser.account_type === "staff" || manageUser.account_type === "admin" ? "First Name" : "Student First Name"}
+                        {isStaffMember(manageUser) ? "First Name" : "Student First Name"}
                       </label>
                       <input value={manageFormData.student_first_name} onChange={(e) => setManageFormData({ ...manageFormData, student_first_name: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-500" />
                     </div>
                     <div className="space-y-1">
                       <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                        {manageUser.role === "admin" || manageUser.role === "super_admin" || (manageUser.role && manageUser.role !== "user") || manageUser.account_type === "staff" || manageUser.account_type === "admin" ? "Last Name" : "Student Last Name"}
+                        {isStaffMember(manageUser) ? "Last Name" : "Student Last Name"}
                       </label>
                       <input value={manageFormData.student_last_name} onChange={(e) => setManageFormData({ ...manageFormData, student_last_name: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-500" />
                     </div>
                     <div className="space-y-1">
                       <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                        {manageUser.role === "admin" || manageUser.role === "super_admin" || (manageUser.role && manageUser.role !== "user") || manageUser.account_type === "staff" || manageUser.account_type === "admin" ? "Email" : "Student Email"}
+                        {isStaffMember(manageUser) ? "Email" : "Student Email"}
                       </label>
                       <input value={manageFormData.student_email} onChange={(e) => setManageFormData({ ...manageFormData, student_email: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-500" />
                     </div>
                     <div className="space-y-1">
                       <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                        {manageUser.role === "admin" || manageUser.role === "super_admin" || (manageUser.role && manageUser.role !== "user") || manageUser.account_type === "staff" || manageUser.account_type === "admin" ? "Phone" : "Student Phone"}
+                        {isStaffMember(manageUser) ? "Phone" : "Student Phone"}
                       </label>
                       <input value={manageFormData.student_phone} onChange={(e) => setManageFormData({ ...manageFormData, student_phone: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-500" />
                     </div>
                   </div>
-                  {!(manageUser.role === "admin" || manageUser.role === "super_admin" || (manageUser.role && manageUser.role !== "user") || manageUser.account_type === "staff" || manageUser.account_type === "admin") && (
+                  {!isStaffMember(manageUser) && (
                     <div className="pt-4 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                       <div className="space-y-1">
                         <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Parent First Name</label>

@@ -4,8 +4,8 @@ import { ArrowLeft, MessageSquare, Shield, HelpCircle, PhoneCall } from "lucide-
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "SMS Terms & Conditions | Schoolari",
-  description: "Review Schoolari's SMS communication terms, message frequency, opt-out instructions, and carrier guidelines.",
+  title: "SMS Terms & Conditions | Dormoney",
+  description: "Review Dormoney's SMS communication terms, message frequency, opt-out instructions, and carrier guidelines.",
 };
 
 export default function SmsTermsPage() {
@@ -13,22 +13,22 @@ export default function SmsTermsPage() {
     <div className="min-h-screen bg-slate-50 text-slate-800">
       {/* Top Header / Navigation */}
       <header className="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-slate-200">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 h-18 sm:h-20 flex items-center justify-between">
           <Link href="/login" className="flex items-center">
             <Image
-              src="/images/Schoolari_logo.png"
-              alt="Schoolari"
-              width={140}
-              height={38}
-              className="h-8 w-auto object-contain"
+              src="/images/dormoney-logo.png"
+              alt="Dormoney"
+              width={260}
+              height={150}
+              className="h-12 sm:h-13 w-auto object-contain"
               priority
             />
           </Link>
           <div className="flex items-center gap-4 text-xs font-semibold">
-            <Link href="/terms" className="text-slate-600 hover:text-violet-600 transition-colors">
+            <Link href="/terms" className="text-slate-600 hover:text-[#1A6FD4] transition-colors">
               Terms &amp; Conditions
             </Link>
-            <Link href="/privacy" className="text-slate-600 hover:text-violet-600 transition-colors">
+            <Link href="/privacy" className="text-slate-600 hover:text-[#1A6FD4] transition-colors">
               Privacy Policy
             </Link>
             <Link
@@ -47,17 +47,17 @@ export default function SmsTermsPage() {
           
           {/* Header Banner */}
           <div className="border-b border-slate-100 pb-8">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-50 text-violet-700 text-xs font-bold uppercase tracking-wider mb-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-[#1A6FD4] text-xs font-bold uppercase tracking-wider mb-4">
               <MessageSquare className="w-3.5 h-3.5" /> SMS Communications &amp; Compliance
             </div>
             <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-              Schoolari SMS Terms &amp; Conditions
+              Dormoney SMS Terms &amp; Conditions
             </h1>
             <p className="text-sm text-slate-500 mt-2">
               Last Updated: August 2026 • A2P 10DLC Program Terms
             </p>
             <p className="text-sm sm:text-base text-slate-600 leading-relaxed mt-4">
-              These SMS Terms &amp; Conditions govern the text messaging and mobile communication services provided by Schoolari (&ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;) to registered students, parents, and guardians.
+              These SMS Terms &amp; Conditions govern the text messaging and mobile communication services provided by Dormoney (&ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;) to registered students, parents, and guardians.
             </p>
           </div>
 
@@ -66,17 +66,17 @@ export default function SmsTermsPage() {
             
             <div className="p-5 sm:p-6 rounded-2xl bg-slate-50 border border-slate-200/70 space-y-2">
               <h2 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
-                <span className="w-6 h-6 rounded-full bg-violet-100 text-violet-700 flex items-center justify-center text-xs font-extrabold">1</span>
+                <span className="w-6 h-6 rounded-full bg-violet-100 text-[#1A6FD4] flex items-center justify-center text-xs font-extrabold">1</span>
                 Program Description
               </h2>
               <p className="text-sm text-slate-600 pl-8 leading-relaxed">
-                Schoolari SMS service provides real-time notifications, application deadline alerts, scholarship match reminders, account security verification codes, and task updates to enrolled students and parents.
+                Dormoney SMS service provides real-time notifications, application deadline alerts, scholarship match reminders, account security verification codes, and task updates to enrolled students and parents.
               </p>
             </div>
 
             <div className="p-5 sm:p-6 rounded-2xl bg-slate-50 border border-slate-200/70 space-y-2">
               <h2 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
-                <span className="w-6 h-6 rounded-full bg-violet-100 text-violet-700 flex items-center justify-center text-xs font-extrabold">2</span>
+                <span className="w-6 h-6 rounded-full bg-violet-100 text-[#1A6FD4] flex items-center justify-center text-xs font-extrabold">2</span>
                 Message Frequency
               </h2>
               <p className="text-sm text-slate-600 pl-8 leading-relaxed">
@@ -86,7 +86,7 @@ export default function SmsTermsPage() {
 
             <div className="p-5 sm:p-6 rounded-2xl bg-slate-50 border border-slate-200/70 space-y-2">
               <h2 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
-                <span className="w-6 h-6 rounded-full bg-violet-100 text-violet-700 flex items-center justify-center text-xs font-extrabold">3</span>
+                <span className="w-6 h-6 rounded-full bg-violet-100 text-[#1A6FD4] flex items-center justify-center text-xs font-extrabold">3</span>
                 Message and Data Rates
               </h2>
               <p className="text-sm text-slate-600 pl-8 leading-relaxed">
@@ -96,7 +96,7 @@ export default function SmsTermsPage() {
 
             <div className="p-5 sm:p-6 rounded-2xl bg-slate-50 border border-slate-200/70 space-y-2">
               <h2 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
-                <span className="w-6 h-6 rounded-full bg-violet-100 text-violet-700 flex items-center justify-center text-xs font-extrabold">4</span>
+                <span className="w-6 h-6 rounded-full bg-violet-100 text-[#1A6FD4] flex items-center justify-center text-xs font-extrabold">4</span>
                 How to Opt-Out (Unsubscribe)
               </h2>
               <p className="text-sm text-slate-600 pl-8 leading-relaxed">
@@ -106,17 +106,17 @@ export default function SmsTermsPage() {
 
             <div className="p-5 sm:p-6 rounded-2xl bg-slate-50 border border-slate-200/70 space-y-2">
               <h2 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
-                <span className="w-6 h-6 rounded-full bg-violet-100 text-violet-700 flex items-center justify-center text-xs font-extrabold">5</span>
+                <span className="w-6 h-6 rounded-full bg-violet-100 text-[#1A6FD4] flex items-center justify-center text-xs font-extrabold">5</span>
                 Help and Support
               </h2>
               <p className="text-sm text-slate-600 pl-8 leading-relaxed">
-                For assistance, text <strong className="text-slate-900 font-bold bg-white px-2 py-0.5 rounded border border-slate-200">HELP</strong> to any message or contact our support team at <a href="mailto:support@schoolari.com" className="text-violet-600 font-semibold underline">support@schoolari.com</a> or <a href="mailto:students@dormoney.com" className="text-violet-600 font-semibold underline">students@dormoney.com</a>.
+                For assistance, text <strong className="text-slate-900 font-bold bg-white px-2 py-0.5 rounded border border-slate-200">HELP</strong> to any message or contact our support team at <a href="mailto:support@dormoney.com" className="text-[#1A6FD4] font-semibold underline">support@dormoney.com</a> or <a href="mailto:students@dormoney.com" className="text-[#1A6FD4] font-semibold underline">students@dormoney.com</a>.
               </p>
             </div>
 
             <div className="p-5 sm:p-6 rounded-2xl bg-slate-50 border border-slate-200/70 space-y-2">
               <h2 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
-                <span className="w-6 h-6 rounded-full bg-violet-100 text-violet-700 flex items-center justify-center text-xs font-extrabold">6</span>
+                <span className="w-6 h-6 rounded-full bg-violet-100 text-[#1A6FD4] flex items-center justify-center text-xs font-extrabold">6</span>
                 Carriers &amp; Liability
               </h2>
               <p className="text-sm text-slate-600 pl-8 leading-relaxed">
@@ -126,11 +126,11 @@ export default function SmsTermsPage() {
 
             <div className="p-5 sm:p-6 rounded-2xl bg-slate-50 border border-slate-200/70 space-y-2">
               <h2 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
-                <span className="w-6 h-6 rounded-full bg-violet-100 text-violet-700 flex items-center justify-center text-xs font-extrabold">7</span>
+                <span className="w-6 h-6 rounded-full bg-violet-100 text-[#1A6FD4] flex items-center justify-center text-xs font-extrabold">7</span>
                 Privacy of Phone Numbers
               </h2>
               <p className="text-sm text-slate-600 pl-8 leading-relaxed">
-                Your mobile phone number and opt-in consent will not be sold, rented, or shared with third parties for marketing or promotional purposes. Review our full <Link href="/privacy" className="text-violet-600 font-semibold underline">Privacy Policy</Link> for additional details on data protection.
+                Your mobile phone number and opt-in consent will not be sold, rented, or shared with third parties for marketing or promotional purposes. Review our full <Link href="/privacy" className="text-[#1A6FD4] font-semibold underline">Privacy Policy</Link> for additional details on data protection.
               </p>
             </div>
 
@@ -138,13 +138,13 @@ export default function SmsTermsPage() {
 
           {/* Footer Navigation */}
           <div className="border-t border-slate-200 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-            <p>© 2026 Schoolari. All rights reserved.</p>
+            <p>© 2026 Dormoney. All rights reserved.</p>
             <div className="flex items-center gap-4">
-              <Link href="/terms" className="hover:text-violet-600 transition-colors">Terms of Service</Link>
+              <Link href="/terms" className="hover:text-[#1A6FD4] transition-colors">Terms of Service</Link>
               <span>•</span>
-              <Link href="/privacy" className="hover:text-violet-600 transition-colors">Privacy Policy</Link>
+              <Link href="/privacy" className="hover:text-[#1A6FD4] transition-colors">Privacy Policy</Link>
               <span>•</span>
-              <Link href="/login" className="hover:text-violet-600 transition-colors">Sign In</Link>
+              <Link href="/login" className="hover:text-[#1A6FD4] transition-colors">Sign In</Link>
             </div>
           </div>
 

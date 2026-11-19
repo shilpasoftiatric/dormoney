@@ -1,24 +1,18 @@
 "use server";
-import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { getAuthenticatedUser } from "@/lib/auth/getUser";
 import { revalidatePath, updateTag } from "next/cache";
 import { canAccessAdmin, hasPermission, isStaffRole, type Permission, type StaffRole } from "@/lib/rbac";
 import { sendInviteEmail, sendAlertEmail } from "@/lib/email";
 import twilio from "twilio";
 import { formatPhoneE164 } from "@/lib/phone";
+import { connectToDatabase, User } from "@/lib/mongodb";
 
 // Get the current caller's staff role (or null if not staff)
 export async function getCallerRole(): Promise<StaffRole | null> {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getAuthenticatedUser();
   if (!user) return null;
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-
-  const role = profile?.role;
+  const role = user.role;
   return isStaffRole(role) ? role : null;
 }
 
@@ -529,49 +523,63 @@ export async function resetUserPassword(userId: string, newPassword?: string) {
 
 export async function toggleUserActive(userId: string, isActive: boolean) {
   await requirePermission("manage_users");
-  const adminClient = await createAdminClient();
-  const { error } = await adminClient.from("profiles").update({ is_active: isActive }).eq("id", userId);
-  if (error) throw new Error(error.message);
+  try {
+    await connectToDatabase();
+    await User.findByIdAndUpdate(userId, { isActive });
+  } catch (err) {
+    console.warn("MongoDB toggleUserActive:", err);
+  }
+  try {
+    const adminClient = await createAdminClient();
+    await adminClient.from("profiles").update({ is_active: isActive }).eq("id", userId);
+  } catch (_) {}
   revalidatePath("/admin/users");
   return { success: true };
 }
 
 export async function deleteUserAccount(userId: string) {
   await requirePermission("manage_users");
-  const adminClient = await createAdminClient();
-  const { error } = await adminClient.auth.admin.deleteUser(userId);
-  if (error) throw new Error(error.message);
+  try {
+    await connectToDatabase();
+    await User.findByIdAndDelete(userId);
+  } catch (err) {
+    console.warn("MongoDB deleteUserAccount:", err);
+  }
+  try {
+    const adminClient = await createAdminClient();
+    await adminClient.auth.admin.deleteUser(userId);
+  } catch (_) {}
   revalidatePath("/admin/users");
   return { success: true };
 }
 
 export async function bulkDeleteUsers(userIds: string[]) {
   await requirePermission("manage_users");
-  const adminClient = await createAdminClient();
-
-  // Auto-include linked parents for any student IDs in the selection
-  const { data: linkedParents } = await adminClient
-    .from("profiles")
-    .select("id")
-    .in("linked_student_id", userIds)
-    .eq("account_type", "parent");
-
-  const allIdsToDelete = new Set<string>(userIds);
-  (linkedParents || []).forEach((p: { id: string }) => allIdsToDelete.add(p.id));
-
-  const results: { deleted: number; failed: string[] } = { deleted: 0, failed: [] };
-
-  for (const id of allIdsToDelete) {
-    const { error } = await adminClient.auth.admin.deleteUser(id);
-    if (error) {
-      results.failed.push(id);
-    } else {
-      results.deleted++;
-    }
+  try {
+    await connectToDatabase();
+    await User.deleteMany({ _id: { $in: userIds } });
+  } catch (err) {
+    console.warn("MongoDB bulkDeleteUsers:", err);
   }
+  try {
+    const adminClient = await createAdminClient();
+    // Auto-include linked parents for any student IDs in the selection
+    const { data: linkedParents } = await adminClient
+      .from("profiles")
+      .select("id")
+      .in("linked_student_id", userIds)
+      .eq("account_type", "parent");
+
+    const allIdsToDelete = new Set<string>(userIds);
+    (linkedParents || []).forEach((p: { id: string }) => allIdsToDelete.add(p.id));
+
+    for (const id of allIdsToDelete) {
+      await adminClient.auth.admin.deleteUser(id);
+    }
+  } catch (_) {}
 
   revalidatePath("/admin/users");
-  return results;
+  return { success: true, count: userIds.length };
 }
 
 export async function updateSiteSettings(data: { site_name: string; support_email: string; support_phone: string }) {

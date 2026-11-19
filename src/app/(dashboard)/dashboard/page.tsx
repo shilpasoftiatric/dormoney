@@ -1,56 +1,49 @@
 import type { Metadata } from "next";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthenticatedUser } from "@/lib/auth/getUser";
+import { connectToDatabase, Campaign } from "@/lib/mongodb";
 import { DashboardClient } from "./DashboardClient";
-import { calculateWorkflowStates, isDashboardStateEqual } from "@/services/task-engine";
-import { getStudentDashboardData } from "@/services/data-fetcher";
-import { getPlanFromPriceId, resolveUserPlan } from "@/lib/subscription";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Dashboard " };
+export const metadata: Metadata = { title: "Dashboard | Dormoney" };
 
 export default async function DashboardPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getAuthenticatedUser();
   if (!user) {
     return null;
   }
-  const dbData = await getStudentDashboardData(user.id);
-  const profile = dbData.profile;
 
-  const firstName = profile?.student_first_name || user?.email?.split("@")[0] || "Student";
-  let initialData = profile?.ai_dashboard_data || null;
+  await connectToDatabase();
+  const campaigns = await Campaign.find({ userId: user._id })
+    .sort({ createdAt: -1 })
+    .lean();
 
-  if (initialData) {
-    // Calculate database-driven semantic states using cached data
-    const states = calculateWorkflowStates(dbData);
+  const formattedCampaigns = campaigns.map((c: any) => ({
+    id: c._id.toString(),
+    title: c.campaignTitle,
+    story: c.campaignStory,
+    goalAmount: c.goalAmount,
+    frequency: c.donationFrequency,
+    status: c.status,
+    createdAt: c.createdAt?.toISOString() || new Date().toISOString(),
+  }));
 
-    const currentState = {
-      ...states,
-      firstName
-    };
-
-    const cachedState = initialData._state;
-    const isStateEqual = isDashboardStateEqual(currentState, cachedState);
-
-    if (!isStateEqual) {
-      initialData = null; // Invalidate cache so client fetches dynamically
-    }
-  }
-
-  const plan = resolveUserPlan(profile);
-  const createdAt = profile?.created_at || null;
+  const firstName =
+    user.firstName ||
+    user.contactName ||
+    user.organizationName ||
+    user.email.split("@")[0];
 
   return (
     <DashboardClient
-      initialData={initialData}
-      firstName={firstName}
-      streak={profile?.current_streak || 1}
-      userGoals={profile?.schoolari_goals || []}
-      globalTasks={dbData.globalTasks || []}
-      trackerItems={dbData.trackerItems || []}
-      matchedScholarshipsCount={dbData.matchedScholarshipsCount || 0}
-      plan={plan}
-      createdAt={createdAt}
+      user={{
+        id: user._id.toString(),
+        firstName,
+        lastName: user.lastName || "",
+        email: user.email,
+        role: user.role,
+        organizationName: user.organizationName,
+      }}
+      campaigns={formattedCampaigns}
     />
   );
 }

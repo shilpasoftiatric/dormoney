@@ -38,17 +38,17 @@ export const sendSMS = async (to: string, body: string) => {
 export const sendWelcomeSMS = async (to: string, role: "student" | "parent", isPrimary: boolean) => {
   const roleName = role === "student" ? "Student" : "Parent/Guardian";
   const message = isPrimary
-    ? `Welcome to Schoolari! Your ${roleName} account has been created. Reply STOP to unsubscribe.`
-    : `Welcome to Schoolari! An account has been created for you as a ${roleName}. Please check your email to set your password. Reply STOP to unsubscribe.`;
+    ? `Welcome to Dormoney! Your ${roleName} account has been created. Reply STOP to unsubscribe.`
+    : `Welcome to Dormoney! An account has been created for you as a ${roleName}. Please check your email to set your password. Reply STOP to unsubscribe.`;
   return await sendSMS(to, message);
 };
 
 export const sendReminderSMS = async (to: string, taskTitle: string, dueDate: string) => {
-  const message = `Schoolari Reminder: "${taskTitle}" is due on ${dueDate}. Log in to view details. Reply STOP to unsubscribe.`;
+  const message = `Dormoney Reminder: "${taskTitle}" is due on ${dueDate}. Log in to view details. Reply STOP to unsubscribe.`;
   return await sendSMS(to, message);
 };
 
 export const sendTrialEndingSMS = async (to: string, name: string, billedDate: string, manageLink: string) => {
-  const message = `Hi ${name}, your Schoolari 7-day free trial ends tomorrow. You will be billed on ${billedDate} to continue the service. Manage your subscription at ${manageLink}`;
+  const message = `Hi ${name}, your Dormoney trial ends tomorrow. You will be billed on ${billedDate} to continue the service. Manage your subscription at ${manageLink}`;
   return await sendSMS(to, message);
 };

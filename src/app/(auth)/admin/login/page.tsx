@@ -58,7 +58,7 @@ export default function AdminLoginPage() {
               id="email"
               name="email"
               type="email"
-              placeholder="admin@schoolari.com"
+              placeholder="admin@dormoney.com"
               required
               autoComplete="email"
               className="pl-10 h-12 rounded-xl border-slate-200 bg-white focus-visible:ring-primary"

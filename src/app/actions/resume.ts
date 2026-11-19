@@ -139,7 +139,7 @@ export async function getResumesAction(): Promise<UserResumesPayload> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) throw new Error("Unauthorized");
+  if (!user) return { resumes: [], active_resume_id: "" };
 
   const { getStudentDashboardData } = await import("@/services/data-fetcher");
   const { masterId } = await getStudentDashboardData(user.id);
@@ -280,7 +280,7 @@ export async function saveResumesAction(payload: UserResumesPayload): Promise<{ 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) throw new Error("Unauthorized");
+  if (!user) return { resumes: [], active_resume_id: "" };
 
   const { getStudentDashboardData } = await import("@/services/data-fetcher");
   const { masterId } = await getStudentDashboardData(user.id);
@@ -374,7 +374,7 @@ export async function exportResumeToVaultAction(
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) throw new Error("Unauthorized");
+  if (!user) return { resumes: [], active_resume_id: "" };
 
   const { getStudentDashboardData } = await import("@/services/data-fetcher");
   const { masterId } = await getStudentDashboardData(user.id);

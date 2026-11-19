@@ -19,7 +19,7 @@ export async function getPersonalizedJobsAction(searchQuery?: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) throw new Error("Unauthorized");
+  if (!user) return [];
 
   // Fetch the student profile
   const { data: profile } = await supabase
@@ -203,7 +203,7 @@ export async function matchResumeToJobAction(
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) throw new Error("Unauthorized");
+  if (!user) return [];
 
   const { getResumesAction } = await import("@/app/actions/resume");
   const resumePayload = await getResumesAction();
@@ -308,7 +308,7 @@ export async function generateCoverLetterDraftAction(
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) throw new Error("Unauthorized");
+  if (!user) return [];
 
   const { getResumesAction } = await import("@/app/actions/resume");
   const resumePayload = await getResumesAction();
@@ -388,7 +388,7 @@ export async function saveJobToTrackerAction(jobData: any, status: string = "Not
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) throw new Error("Unauthorized");
+  if (!user) return [];
 
   const { masterId } = await getStudentDashboardData(user.id);
 
@@ -675,7 +675,7 @@ export async function getJobInterviewQuestionsAction(
 ) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("Unauthorized");
+  if (!user) return [];
 
   const { getResumesAction } = await import("@/app/actions/resume");
   const resumePayload = await getResumesAction();
@@ -824,7 +824,7 @@ export async function getWishlistJobsAction() {
 export async function toggleWishlistJobAction(jobData: any) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("Unauthorized");
+  if (!user) return [];
 
   const { masterId } = await getStudentDashboardData(user.id);
   const { createAdminClient } = await import("@/lib/supabase/server");
@@ -894,7 +894,7 @@ export async function toggleWishlistJobAction(jobData: any) {
 export async function removeWishlistJobAction(jobId: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("Unauthorized");
+  if (!user) return [];
 
   const { masterId } = await getStudentDashboardData(user.id);
   const { createAdminClient } = await import("@/lib/supabase/server");
@@ -926,7 +926,7 @@ export async function evaluateStarInterviewAnswerAction(params: {
 }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("Unauthorized");
+  if (!user) return [];
 
   const { jobTitle, company, question, situation, task, action, result } = params;
 
@@ -1005,7 +1005,7 @@ export async function saveInterviewPracticeToTrackerAction(params: {
 }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("Unauthorized");
+  if (!user) return [];
 
   const { masterId } = await getStudentDashboardData(user.id);
   const { jobId, jobData, starredQuestions, practiceEntries } = params;

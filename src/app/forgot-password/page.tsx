@@ -33,17 +33,17 @@ export default function ForgotPasswordPage() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-slate-50 relative overflow-hidden">
       {/* Background decorations */}
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-violet-100/50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
-      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-purple-100/50 rounded-full blur-3xl translate-y-1/3 -translate-x-1/3" />
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-100/50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
+      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-green-100/50 rounded-full blur-3xl translate-y-1/3 -translate-x-1/3" />
 
       {/* Logo */}
       <div className="flex items-center justify-center mb-8 relative z-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
         <Image
-          src="/images/Schoolari_logo.png"
-          alt="Schoolari"
-          width={180}
-          height={48}
-          className="h-12 w-auto object-contain"
+          src="/images/dormoney-logo.png"
+          alt="Dormoney"
+          width={220}
+          height={140}
+          className="h-14 w-auto object-contain"
           priority
         />
       </div>
@@ -91,7 +91,7 @@ export default function ForgotPasswordPage() {
               <Button
                 type="submit"
                 disabled={isPending}
-                className="w-full h-12 rounded-xl text-base font-bold gap-2 bg-gradient-to-r from-violet-600 to-purple-700 hover:from-violet-700 hover:to-purple-800 shadow-lg shadow-purple-200 transition-all"
+                className="w-full h-12 rounded-xl text-base font-bold gap-2 bg-gradient-to-r from-[#1A6FD4] to-[#1455a4] hover:from-[#155ab0] hover:to-[#0f4484] shadow-lg shadow-blue-200 transition-all text-white"
               >
                 {isPending ? (
                   <span className="flex items-center gap-2">
