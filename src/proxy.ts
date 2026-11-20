@@ -9,17 +9,17 @@ export async function proxy(request: NextRequest) {
   const isLocalhost = (hostname.includes("localhost") || hostname.includes("127.0.0.1") || hostname.includes("192.168.")) && !isLocalSubdomain;
 
   // ── 1. Subdomain & Hostname Routing ──────────────────────────────────────────
-  if (!isLocalhost) {
+  const isVercel = hostname.includes("vercel.app");
+
+  if (!isLocalhost && !isVercel) {
     const isAdminDomain =
       hostname.startsWith("admin.dormoney.com") ||
-      hostname.startsWith("admin.dormoney.vercel.app") ||
       hostname.startsWith("admin.schoolari.com") ||
       hostname.startsWith("admin.localhost");
 
     const isMemberDomain =
       hostname.startsWith("app.dormoney.com") ||
       hostname.startsWith("members.dormoney.com") ||
-      hostname.startsWith("dormoney.vercel.app") ||
       hostname.startsWith("members.schoolari.com") ||
       hostname.startsWith("members.localhost");
 
@@ -49,6 +49,13 @@ export async function proxy(request: NextRequest) {
       }
       return NextResponse.redirect(url);
     }
+  }
+
+  // Redirect bare /admin to /admin/login on any environment
+  if (pathname === "/admin") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/admin/login";
+    return NextResponse.redirect(url);
   }
 
   // ── 2. Allow Public Assets & Auth Endpoints ────────────────────────────────
